@@ -2,6 +2,7 @@ import puppeteer from "puppeteer";
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { isImageDataUri, isSafeHttpUrl } from "./url-safety";
 
 let cachedExecutablePath: string | null | undefined;
 
@@ -28,8 +29,18 @@ function getDefaultLogoDataUri(): string | null {
   return null;
 }
 
-function resolveLogoSrc(logoUrl?: string | null): string | null {
-  if (logoUrl && /^(https?:|data:)/i.test(logoUrl.trim())) return logoUrl.trim();
+async function resolveLogoSrc(
+  logoUrl?: string | null,
+): Promise<string | null> {
+  const value = logoUrl?.trim();
+  if (value) {
+    // Allow image data URIs directly.
+    if (isImageDataUri(value)) return value;
+    // Only allow remote URLs that resolve to safe public addresses,
+    // otherwise fall back to the default logo (defense-in-depth against
+    // SSRF, even if an unsafe URL was somehow persisted).
+    if (/^https?:/i.test(value) && (await isSafeHttpUrl(value))) return value;
+  }
   return getDefaultLogoDataUri();
 }
 
@@ -89,10 +100,9 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function buildHtml(paper: PdfPaper): string {
+function buildHtml(paper: PdfPaper, logoSrc: string | null): string {
   const isRtl = paper.medium === "urdu" || paper.medium === "dual";
   const dir = isRtl ? "rtl" : "ltr";
-  const logoSrc = resolveLogoSrc(paper.logoUrl);
   const fontFamily = isRtl
     ? "'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif"
     : "'Georgia', 'Times New Roman', serif";
@@ -255,7 +265,8 @@ export async function renderPaperPdf(paper: PdfPaper): Promise<Buffer> {
   });
   try {
     const page = await browser.newPage();
-    await page.setContent(buildHtml(paper), { waitUntil: "load" });
+    const logoSrc = await resolveLogoSrc(paper.logoUrl);
+    await page.setContent(buildHtml(paper, logoSrc), { waitUntil: "load" });
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,

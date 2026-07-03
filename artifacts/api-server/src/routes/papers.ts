@@ -27,6 +27,7 @@ import { attachUser, requireSchool, type AuthedRequest } from "../lib/auth";
 import { renderPaperPdf } from "../lib/pdf";
 import { enforceLimit } from "../lib/limits";
 import { ownsClassSubject, ownsQuestionIds } from "../lib/ownership";
+import { validateLogoUrl } from "../lib/url-safety";
 
 const router: IRouter = Router();
 
@@ -300,6 +301,14 @@ router.post(
       return;
     }
 
+    if (body.logoUrl !== undefined) {
+      const logoError = await validateLogoUrl(body.logoUrl);
+      if (logoError) {
+        res.status(400).json({ error: logoError });
+        return;
+      }
+    }
+
     const ownershipError = await ownsClassSubject(
       schoolId,
       body.classId,
@@ -394,6 +403,14 @@ router.patch(
     if (!existing) {
       res.status(404).json({ error: "Paper not found" });
       return;
+    }
+
+    if (body.logoUrl !== undefined) {
+      const logoError = await validateLogoUrl(body.logoUrl);
+      if (logoError) {
+        res.status(400).json({ error: logoError });
+        return;
+      }
     }
 
     if (body.questions) {

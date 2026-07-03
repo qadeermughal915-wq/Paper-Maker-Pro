@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { GetSchoolResponse, UpdateSchoolBody, UpdateSchoolResponse } from "@workspace/api-zod";
 import { asyncHandler } from "../lib/http";
 import { attachUser, requireSchool, type AuthedRequest } from "../lib/auth";
+import { validateLogoUrl } from "../lib/url-safety";
 
 const router: IRouter = Router();
 
@@ -41,6 +42,13 @@ router.patch(
     }
     const schoolId = req.localUser!.schoolId!;
     const body = UpdateSchoolBody.parse(req.body);
+    if (body.logoUrl !== undefined) {
+      const logoError = await validateLogoUrl(body.logoUrl);
+      if (logoError) {
+        res.status(400).json({ error: logoError });
+        return;
+      }
+    }
     const [updated] = await db
       .update(schools)
       .set({

@@ -1,1 +1,2 @@
-- [Multi-tenant ownership checks](tenant-isolation.md) — every client-supplied reference ID must be verified against the caller's school before insert/update/join.
+- [paperz.pk architecture](paperz-architecture.md) — pnpm monorepo exam-paper maker; OpenAPI/Orval codegen contract, api/web wiring, per-school isolation gotchas.
+- [SSRF on user URLs rendered by Puppeteer](ssrf-user-urls.md) — validate + private-range block any user URL a headless browser or server fetches (logo URLs).
