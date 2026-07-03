@@ -16,7 +16,7 @@ import { asyncHandler } from "../lib/http";
 import { attachUser, requireUser, type AuthedRequest } from "../lib/auth";
 
 const router: IRouter = Router();
-router.use(attachUser, requireUser);
+router.use("/views", attachUser, requireUser);
 
 function serialize(v: typeof userTableViews.$inferSelect) {
   return {

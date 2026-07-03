@@ -15,7 +15,7 @@ import { asyncHandler } from "../lib/http";
 import { attachUser, requireSchool, type AuthedRequest } from "../lib/auth";
 
 const router: IRouter = Router();
-router.use(attachUser, requireSchool);
+router.use("/templates", attachUser, requireSchool);
 
 async function ownsTaxonomy(
   schoolId: number,

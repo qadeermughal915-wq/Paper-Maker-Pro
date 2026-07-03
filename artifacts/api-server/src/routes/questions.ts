@@ -40,7 +40,7 @@ import { attachUser, requireSchool, type AuthedRequest } from "../lib/auth";
 import { enforceLimit } from "../lib/limits";
 
 const router: IRouter = Router();
-router.use(attachUser, requireSchool);
+router.use("/questions", attachUser, requireSchool);
 
 const QUESTION_TYPES = [
   "mcq",

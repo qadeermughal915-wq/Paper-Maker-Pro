@@ -39,7 +39,11 @@ import { asyncHandler } from "../lib/http";
 import { attachUser, requireSchool, type AuthedRequest } from "../lib/auth";
 
 const router: IRouter = Router();
-router.use(attachUser, requireSchool);
+router.use(
+  ["/classes", "/subjects", "/chapters", "/topics"],
+  attachUser,
+  requireSchool,
+);
 
 /* ---------------- Classes ---------------- */
 router.get(

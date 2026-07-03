@@ -96,7 +96,7 @@ async function loadPaperFull(schoolId: number, paperId: number) {
   };
 }
 
-router.use(attachUser, requireSchool);
+router.use("/papers", attachUser, requireSchool);
 
 router.get(
   "/papers",

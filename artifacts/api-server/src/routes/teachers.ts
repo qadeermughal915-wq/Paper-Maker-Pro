@@ -28,7 +28,7 @@ function serialize(u: typeof users.$inferSelect) {
   };
 }
 
-router.use(attachUser, requireSchool);
+router.use("/teachers", attachUser, requireSchool);
 
 router.get(
   "/teachers",
