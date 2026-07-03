@@ -59,7 +59,7 @@ function escapeHtml(value: string): string {
 }
 
 function buildHtml(paper: PdfPaper): string {
-  const isRtl = paper.medium === "urdu";
+  const isRtl = paper.medium === "urdu" || paper.medium === "dual";
   const dir = isRtl ? "rtl" : "ltr";
   const fontFamily = isRtl
     ? "'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif"

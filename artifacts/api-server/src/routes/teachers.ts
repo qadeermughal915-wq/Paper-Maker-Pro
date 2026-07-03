@@ -13,6 +13,7 @@ import {
 } from "@workspace/api-zod";
 import { asyncHandler } from "../lib/http";
 import { attachUser, requireSchool, type AuthedRequest } from "../lib/auth";
+import { enforceLimit } from "../lib/limits";
 
 const router: IRouter = Router();
 
@@ -55,6 +56,12 @@ router.post(
     }
     const schoolId = req.localUser!.schoolId!;
     const body = CreateTeacherBody.parse(req.body);
+
+    const limitError = await enforceLimit(schoolId, "teachers");
+    if (limitError) {
+      res.status(403).json({ error: limitError });
+      return;
+    }
 
     const [existing] = await db
       .select()

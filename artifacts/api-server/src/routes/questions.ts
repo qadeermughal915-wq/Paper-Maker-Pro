@@ -18,6 +18,7 @@ import {
 } from "@workspace/api-zod";
 import { asyncHandler } from "../lib/http";
 import { attachUser, requireSchool, type AuthedRequest } from "../lib/auth";
+import { enforceLimit } from "../lib/limits";
 
 const router: IRouter = Router();
 router.use(attachUser, requireSchool);
@@ -168,6 +169,11 @@ router.post(
   asyncHandler(async (req: AuthedRequest, res: Response) => {
     const schoolId = req.localUser!.schoolId!;
     const body = CreateQuestionBody.parse(req.body);
+    const limitError = await enforceLimit(schoolId, "questions");
+    if (limitError) {
+      res.status(403).json({ error: limitError });
+      return;
+    }
     const ownershipError = await ownsTaxonomy(schoolId, {
       classId: body.classId,
       subjectId: body.subjectId,
@@ -208,6 +214,16 @@ router.post(
     const body = ImportQuestionsBody.parse(req.body);
     const errors: { row: number; message: string }[] = [];
     let imported = 0;
+
+    const limitError = await enforceLimit(
+      schoolId,
+      "questions",
+      body.rows.length,
+    );
+    if (limitError) {
+      res.status(403).json({ error: limitError });
+      return;
+    }
 
     const ownershipError = await ownsTaxonomy(schoolId, {
       classId: body.classId,

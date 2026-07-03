@@ -25,6 +25,7 @@ import {
 import { asyncHandler } from "../lib/http";
 import { attachUser, requireSchool, type AuthedRequest } from "../lib/auth";
 import { renderPaperPdf } from "../lib/pdf";
+import { enforceLimit } from "../lib/limits";
 
 const router: IRouter = Router();
 
@@ -173,6 +174,10 @@ router.post(
         conditions.push(inArray(questions.chapterId, body.chapterIds));
       if (body.difficulty)
         conditions.push(eq(questions.difficulty, body.difficulty));
+      if (body.medium === "english")
+        conditions.push(inArray(questions.medium, ["english", "dual"]));
+      else if (body.medium === "urdu")
+        conditions.push(inArray(questions.medium, ["urdu", "dual"]));
 
       const pool = await db
         .select()
@@ -226,6 +231,11 @@ router.post(
   asyncHandler(async (req: AuthedRequest, res: Response) => {
     const schoolId = req.localUser!.schoolId!;
     const body = CreatePaperBody.parse(req.body);
+    const limitError = await enforceLimit(schoolId, "papers");
+    if (limitError) {
+      res.status(403).json({ error: limitError });
+      return;
+    }
     const totalMarks = body.questions.reduce((sum, q) => sum + q.marks, 0);
 
     const [school] = await db

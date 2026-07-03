@@ -144,6 +144,14 @@ router.post(
   asyncHandler(async (req: AuthedRequest, res: Response) => {
     const schoolId = req.localUser!.schoolId!;
     const body = CreateSubjectBody.parse(req.body);
+    const [ownerClass] = await db
+      .select({ id: classes.id })
+      .from(classes)
+      .where(and(eq(classes.id, body.classId), eq(classes.schoolId, schoolId)));
+    if (!ownerClass) {
+      res.status(400).json({ error: "Invalid class for this school" });
+      return;
+    }
     const [created] = await db
       .insert(subjects)
       .values({ schoolId, classId: body.classId, name: body.name })
@@ -227,6 +235,16 @@ router.post(
   asyncHandler(async (req: AuthedRequest, res: Response) => {
     const schoolId = req.localUser!.schoolId!;
     const body = CreateChapterBody.parse(req.body);
+    const [ownerSubject] = await db
+      .select({ id: subjects.id })
+      .from(subjects)
+      .where(
+        and(eq(subjects.id, body.subjectId), eq(subjects.schoolId, schoolId)),
+      );
+    if (!ownerSubject) {
+      res.status(400).json({ error: "Invalid subject for this school" });
+      return;
+    }
     const [created] = await db
       .insert(chapters)
       .values({
@@ -314,6 +332,16 @@ router.post(
   asyncHandler(async (req: AuthedRequest, res: Response) => {
     const schoolId = req.localUser!.schoolId!;
     const body = CreateTopicBody.parse(req.body);
+    const [ownerChapter] = await db
+      .select({ id: chapters.id })
+      .from(chapters)
+      .where(
+        and(eq(chapters.id, body.chapterId), eq(chapters.schoolId, schoolId)),
+      );
+    if (!ownerChapter) {
+      res.status(400).json({ error: "Invalid chapter for this school" });
+      return;
+    }
     const [created] = await db
       .insert(topics)
       .values({ schoolId, chapterId: body.chapterId, name: body.name })
