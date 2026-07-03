@@ -3,13 +3,31 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: paperz.pk — school exam paper maker API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: session
+    description: Current user session and onboarding
+  - name: school
+    description: School profile management
+  - name: teachers
+    description: Teacher management (school admin)
+  - name: taxonomy
+    description: Classes, subjects, chapters, topics
+  - name: questions
+    description: Question bank
+  - name: papers
+    description: Paper generation and management
+  - name: packages
+    description: Subscription packages
+  - name: admin
+    description: Super admin operations
+  - name: stats
+    description: Dashboard statistics
 paths:
   /healthz:
     get:
@@ -24,7 +42,868 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /me:
+    get:
+      operationId: getMe
+      tags: [session]
+      summary: Get current authenticated user
+      description: Returns the current user with role and school, provisioning a local record if needed.
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /onboarding/school:
+    post:
+      operationId: onboardSchool
+      tags: [session]
+      summary: Create a school during onboarding
+      description: Creates a new school and assigns the current user as its school admin, seeding starter content.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchoolInput"
+      responses:
+        "201":
+          description: School created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Me"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /school:
+    get:
+      operationId: getSchool
+      tags: [school]
+      summary: Get the current user's school
+      responses:
+        "200":
+          description: School
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    patch:
+      operationId: updateSchool
+      tags: [school]
+      summary: Update the current user's school
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SchoolUpdate"
+      responses:
+        "200":
+          description: Updated school
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/School"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /teachers:
+    get:
+      operationId: listTeachers
+      tags: [teachers]
+      summary: List teachers in the school
+      responses:
+        "200":
+          description: Teachers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Teacher"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createTeacher
+      tags: [teachers]
+      summary: Invite/add a teacher to the school
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeacherInput"
+      responses:
+        "201":
+          description: Teacher created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Teacher"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /teachers/{id}:
+    patch:
+      operationId: updateTeacher
+      tags: [teachers]
+      summary: Update a teacher
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeacherUpdate"
+      responses:
+        "200":
+          description: Updated teacher
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Teacher"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteTeacher
+      tags: [teachers]
+      summary: Remove a teacher
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /classes:
+    get:
+      operationId: listClasses
+      tags: [taxonomy]
+      summary: List classes
+      responses:
+        "200":
+          description: Classes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Class"
+    post:
+      operationId: createClass
+      tags: [taxonomy]
+      summary: Create a class
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClassInput"
+      responses:
+        "201":
+          description: Class created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Class"
+  /classes/{id}:
+    patch:
+      operationId: updateClass
+      tags: [taxonomy]
+      summary: Update a class
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClassUpdate"
+      responses:
+        "200":
+          description: Updated class
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Class"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteClass
+      tags: [taxonomy]
+      summary: Delete a class
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /subjects:
+    get:
+      operationId: listSubjects
+      tags: [taxonomy]
+      summary: List subjects
+      parameters:
+        - name: classId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Subjects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Subject"
+    post:
+      operationId: createSubject
+      tags: [taxonomy]
+      summary: Create a subject
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubjectInput"
+      responses:
+        "201":
+          description: Subject created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subject"
+  /subjects/{id}:
+    patch:
+      operationId: updateSubject
+      tags: [taxonomy]
+      summary: Update a subject
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubjectUpdate"
+      responses:
+        "200":
+          description: Updated subject
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subject"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteSubject
+      tags: [taxonomy]
+      summary: Delete a subject
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /chapters:
+    get:
+      operationId: listChapters
+      tags: [taxonomy]
+      summary: List chapters
+      parameters:
+        - name: subjectId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Chapters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Chapter"
+    post:
+      operationId: createChapter
+      tags: [taxonomy]
+      summary: Create a chapter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChapterInput"
+      responses:
+        "201":
+          description: Chapter created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Chapter"
+  /chapters/{id}:
+    patch:
+      operationId: updateChapter
+      tags: [taxonomy]
+      summary: Update a chapter
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChapterUpdate"
+      responses:
+        "200":
+          description: Updated chapter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Chapter"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteChapter
+      tags: [taxonomy]
+      summary: Delete a chapter
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /topics:
+    get:
+      operationId: listTopics
+      tags: [taxonomy]
+      summary: List topics
+      parameters:
+        - name: chapterId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Topics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Topic"
+    post:
+      operationId: createTopic
+      tags: [taxonomy]
+      summary: Create a topic
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TopicInput"
+      responses:
+        "201":
+          description: Topic created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Topic"
+  /topics/{id}:
+    patch:
+      operationId: updateTopic
+      tags: [taxonomy]
+      summary: Update a topic
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TopicUpdate"
+      responses:
+        "200":
+          description: Updated topic
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Topic"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteTopic
+      tags: [taxonomy]
+      summary: Delete a topic
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /questions:
+    get:
+      operationId: listQuestions
+      tags: [questions]
+      summary: List and filter questions
+      parameters:
+        - name: classId
+          in: query
+          schema:
+            type: integer
+        - name: subjectId
+          in: query
+          schema:
+            type: integer
+        - name: chapterId
+          in: query
+          schema:
+            type: integer
+        - name: topicId
+          in: query
+          schema:
+            type: integer
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/QuestionType"
+        - name: medium
+          in: query
+          schema:
+            $ref: "#/components/schemas/Medium"
+        - name: difficulty
+          in: query
+          schema:
+            $ref: "#/components/schemas/Difficulty"
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Questions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Question"
+    post:
+      operationId: createQuestion
+      tags: [questions]
+      summary: Create a question
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuestionInput"
+      responses:
+        "201":
+          description: Question created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /questions/import:
+    post:
+      operationId: importQuestions
+      tags: [questions]
+      summary: Bulk import questions from parsed CSV/Excel rows
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuestionImportInput"
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /questions/{id}:
+    get:
+      operationId: getQuestion
+      tags: [questions]
+      summary: Get a question
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Question
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateQuestion
+      tags: [questions]
+      summary: Update a question
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuestionUpdate"
+      responses:
+        "200":
+          description: Updated question
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteQuestion
+      tags: [questions]
+      summary: Delete a question
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /papers:
+    get:
+      operationId: listPapers
+      tags: [papers]
+      summary: List saved papers
+      responses:
+        "200":
+          description: Papers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaperSummary"
+    post:
+      operationId: createPaper
+      tags: [papers]
+      summary: Save a paper with its questions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaperInput"
+      responses:
+        "201":
+          description: Paper created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Paper"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /papers/generate:
+    post:
+      operationId: generatePaper
+      tags: [papers]
+      summary: Auto-generate a draft paper from the question bank
+      description: Returns an unsaved draft paper with selected questions based on the criteria.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeneratePaperInput"
+      responses:
+        "200":
+          description: Draft paper
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Paper"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /papers/{id}:
+    get:
+      operationId: getPaper
+      tags: [papers]
+      summary: Get a paper with its questions
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Paper
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Paper"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updatePaper
+      tags: [papers]
+      summary: Update a paper and its questions
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaperUpdate"
+      responses:
+        "200":
+          description: Updated paper
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Paper"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deletePaper
+      tags: [papers]
+      summary: Delete a paper
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /packages:
+    get:
+      operationId: listPackages
+      tags: [packages]
+      summary: List subscription packages
+      responses:
+        "200":
+          description: Packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Package"
+    post:
+      operationId: createPackage
+      tags: [packages]
+      summary: Create a package (super admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PackageInput"
+      responses:
+        "201":
+          description: Package created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Package"
+  /packages/{id}:
+    patch:
+      operationId: updatePackage
+      tags: [packages]
+      summary: Update a package (super admin)
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PackageUpdate"
+      responses:
+        "200":
+          description: Updated package
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Package"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deletePackage
+      tags: [packages]
+      summary: Delete a package (super admin)
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /subscription:
+    get:
+      operationId: getSubscription
+      tags: [packages]
+      summary: Get the current school's subscription
+      responses:
+        "200":
+          description: Subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: subscribe
+      tags: [packages]
+      summary: Subscribe the current school to a package
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubscriptionInput"
+      responses:
+        "200":
+          description: Subscription
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /admin/schools:
+    get:
+      operationId: listAllSchools
+      tags: [admin]
+      summary: List all schools (super admin)
+      responses:
+        "200":
+          description: Schools
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminSchool"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /stats/school:
+    get:
+      operationId: getSchoolStats
+      tags: [stats]
+      summary: Dashboard stats for the current school
+      responses:
+        "200":
+          description: School stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SchoolStats"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /stats/admin:
+    get:
+      operationId: getAdminStats
+      tags: [stats]
+      summary: Platform-wide stats (super admin)
+      responses:
+        "200":
+          description: Admin stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /stats/questions-by-type:
+    get:
+      operationId: getQuestionsByType
+      tags: [stats]
+      summary: Question counts grouped by type for the current school
+      responses:
+        "200":
+          description: Grouped counts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TypeCount"
+  /stats/recent-papers:
+    get:
+      operationId: getRecentPapers
+      tags: [stats]
+      summary: Recent papers for the current school
+      responses:
+        "200":
+          description: Recent papers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaperSummary"
+
 components:
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +912,727 @@ components:
           type: string
       required:
         - status
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
 
+    Role:
+      type: string
+      enum: [super_admin, school_admin, teacher]
+    QuestionType:
+      type: string
+      enum: [mcq, short, long, exercise, conceptual, past_paper]
+    Medium:
+      type: string
+      enum: [urdu, english, dual]
+    Difficulty:
+      type: string
+      enum: [easy, medium, hard]
+
+    Me:
+      type: object
+      required: [authenticated, needsOnboarding]
+      properties:
+        authenticated:
+          type: boolean
+        needsOnboarding:
+          type: boolean
+        id:
+          type: ["integer", "null"]
+        email:
+          type: ["string", "null"]
+        name:
+          type: ["string", "null"]
+        role:
+          oneOf:
+            - $ref: "#/components/schemas/Role"
+            - type: "null"
+        schoolId:
+          type: ["integer", "null"]
+        school:
+          oneOf:
+            - $ref: "#/components/schemas/School"
+            - type: "null"
+
+    School:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        address:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]
+    SchoolInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        address:
+          type: string
+        phone:
+          type: string
+        logoUrl:
+          type: string
+    SchoolUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        address:
+          type: string
+        phone:
+          type: string
+        logoUrl:
+          type: string
+
+    Teacher:
+      type: object
+      required: [id, name, email, role, status]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          $ref: "#/components/schemas/Role"
+        status:
+          type: string
+          enum: [active, invited]
+        createdAt:
+          type: ["string", "null"]
+    TeacherInput:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          minLength: 3
+    TeacherUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+
+    Class:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        orderIndex:
+          type: integer
+    ClassInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        orderIndex:
+          type: integer
+    ClassUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        orderIndex:
+          type: integer
+
+    Subject:
+      type: object
+      required: [id, classId, name]
+      properties:
+        id:
+          type: integer
+        classId:
+          type: integer
+        name:
+          type: string
+    SubjectInput:
+      type: object
+      required: [classId, name]
+      properties:
+        classId:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+    SubjectUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+
+    Chapter:
+      type: object
+      required: [id, subjectId, name]
+      properties:
+        id:
+          type: integer
+        subjectId:
+          type: integer
+        name:
+          type: string
+        orderIndex:
+          type: integer
+    ChapterInput:
+      type: object
+      required: [subjectId, name]
+      properties:
+        subjectId:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+        orderIndex:
+          type: integer
+    ChapterUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        orderIndex:
+          type: integer
+
+    Topic:
+      type: object
+      required: [id, chapterId, name]
+      properties:
+        id:
+          type: integer
+        chapterId:
+          type: integer
+        name:
+          type: string
+    TopicInput:
+      type: object
+      required: [chapterId, name]
+      properties:
+        chapterId:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+    TopicUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+
+    Question:
+      type: object
+      required: [id, classId, subjectId, type, medium, difficulty, marks, text]
+      properties:
+        id:
+          type: integer
+        classId:
+          type: integer
+        subjectId:
+          type: integer
+        chapterId:
+          type: ["integer", "null"]
+        topicId:
+          type: ["integer", "null"]
+        type:
+          $ref: "#/components/schemas/QuestionType"
+        medium:
+          $ref: "#/components/schemas/Medium"
+        difficulty:
+          $ref: "#/components/schemas/Difficulty"
+        marks:
+          type: integer
+        text:
+          type: string
+        options:
+          type: ["array", "null"]
+          items:
+            type: string
+        answer:
+          type: ["string", "null"]
+        className:
+          type: ["string", "null"]
+        subjectName:
+          type: ["string", "null"]
+        chapterName:
+          type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]
+    QuestionInput:
+      type: object
+      required: [classId, subjectId, type, medium, difficulty, marks, text]
+      properties:
+        classId:
+          type: integer
+        subjectId:
+          type: integer
+        chapterId:
+          type: ["integer", "null"]
+        topicId:
+          type: ["integer", "null"]
+        type:
+          $ref: "#/components/schemas/QuestionType"
+        medium:
+          $ref: "#/components/schemas/Medium"
+        difficulty:
+          $ref: "#/components/schemas/Difficulty"
+        marks:
+          type: integer
+          minimum: 0
+        text:
+          type: string
+          minLength: 1
+        options:
+          type: array
+          items:
+            type: string
+        answer:
+          type: string
+    QuestionUpdate:
+      type: object
+      properties:
+        chapterId:
+          type: ["integer", "null"]
+        topicId:
+          type: ["integer", "null"]
+        type:
+          $ref: "#/components/schemas/QuestionType"
+        medium:
+          $ref: "#/components/schemas/Medium"
+        difficulty:
+          $ref: "#/components/schemas/Difficulty"
+        marks:
+          type: integer
+          minimum: 0
+        text:
+          type: string
+          minLength: 1
+        options:
+          type: array
+          items:
+            type: string
+        answer:
+          type: string
+    QuestionImportInput:
+      type: object
+      required: [classId, subjectId, rows]
+      properties:
+        classId:
+          type: integer
+        subjectId:
+          type: integer
+        chapterId:
+          type: ["integer", "null"]
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuestionImportRow"
+    QuestionImportRow:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+        type:
+          type: string
+        medium:
+          type: string
+        difficulty:
+          type: string
+        marks:
+          type: integer
+        options:
+          type: array
+          items:
+            type: string
+        answer:
+          type: string
+    ImportResult:
+      type: object
+      required: [imported, failed, errors]
+      properties:
+        imported:
+          type: integer
+        failed:
+          type: integer
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportError"
+    ImportError:
+      type: object
+      required: [row, message]
+      properties:
+        row:
+          type: integer
+        message:
+          type: string
+
+    PaperQuestion:
+      type: object
+      required: [order, section, type, marks, text]
+      properties:
+        id:
+          type: ["integer", "null"]
+        questionId:
+          type: ["integer", "null"]
+        order:
+          type: integer
+        section:
+          type: string
+        type:
+          $ref: "#/components/schemas/QuestionType"
+        marks:
+          type: integer
+        text:
+          type: string
+        options:
+          type: ["array", "null"]
+          items:
+            type: string
+    PaperQuestionInput:
+      type: object
+      required: [order, section, type, marks, text]
+      properties:
+        questionId:
+          type: ["integer", "null"]
+        order:
+          type: integer
+        section:
+          type: string
+        type:
+          $ref: "#/components/schemas/QuestionType"
+        marks:
+          type: integer
+        text:
+          type: string
+        options:
+          type: array
+          items:
+            type: string
+    Paper:
+      type: object
+      required: [title, classId, subjectId, medium, totalMarks, questions]
+      properties:
+        id:
+          type: ["integer", "null"]
+        title:
+          type: string
+        classId:
+          type: integer
+        subjectId:
+          type: integer
+        className:
+          type: ["string", "null"]
+        subjectName:
+          type: ["string", "null"]
+        medium:
+          $ref: "#/components/schemas/Medium"
+        totalMarks:
+          type: integer
+        durationMinutes:
+          type: ["integer", "null"]
+        examDate:
+          type: ["string", "null"]
+        instructions:
+          type: ["string", "null"]
+        schoolName:
+          type: ["string", "null"]
+        logoUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaperQuestion"
+    PaperSummary:
+      type: object
+      required: [id, title, totalMarks]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        className:
+          type: ["string", "null"]
+        subjectName:
+          type: ["string", "null"]
+        medium:
+          oneOf:
+            - $ref: "#/components/schemas/Medium"
+            - type: "null"
+        totalMarks:
+          type: integer
+        questionCount:
+          type: integer
+        createdAt:
+          type: ["string", "null"]
+    PaperInput:
+      type: object
+      required: [title, classId, subjectId, medium, questions]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        classId:
+          type: integer
+        subjectId:
+          type: integer
+        medium:
+          $ref: "#/components/schemas/Medium"
+        durationMinutes:
+          type: integer
+        examDate:
+          type: string
+        instructions:
+          type: string
+        schoolName:
+          type: string
+        logoUrl:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaperQuestionInput"
+    PaperUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        medium:
+          $ref: "#/components/schemas/Medium"
+        durationMinutes:
+          type: integer
+        examDate:
+          type: string
+        instructions:
+          type: string
+        schoolName:
+          type: string
+        logoUrl:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaperQuestionInput"
+    GeneratePaperInput:
+      type: object
+      required: [classId, subjectId, medium]
+      properties:
+        title:
+          type: string
+        classId:
+          type: integer
+        subjectId:
+          type: integer
+        chapterIds:
+          type: array
+          items:
+            type: integer
+        medium:
+          $ref: "#/components/schemas/Medium"
+        difficulty:
+          oneOf:
+            - $ref: "#/components/schemas/Difficulty"
+            - type: "null"
+        counts:
+          type: array
+          items:
+            $ref: "#/components/schemas/SectionCount"
+        durationMinutes:
+          type: integer
+        examDate:
+          type: string
+        instructions:
+          type: string
+    SectionCount:
+      type: object
+      required: [type, count]
+      properties:
+        type:
+          $ref: "#/components/schemas/QuestionType"
+        count:
+          type: integer
+          minimum: 0
+
+    Package:
+      type: object
+      required: [id, name, price]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        price:
+          type: integer
+        billingPeriod:
+          type: ["string", "null"]
+        maxTeachers:
+          type: ["integer", "null"]
+        maxQuestions:
+          type: ["integer", "null"]
+        maxPapers:
+          type: ["integer", "null"]
+        features:
+          type: ["array", "null"]
+          items:
+            type: string
+        isActive:
+          type: boolean
+    PackageInput:
+      type: object
+      required: [name, price]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        price:
+          type: integer
+          minimum: 0
+        billingPeriod:
+          type: string
+        maxTeachers:
+          type: integer
+        maxQuestions:
+          type: integer
+        maxPapers:
+          type: integer
+        features:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+    PackageUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        price:
+          type: integer
+          minimum: 0
+        billingPeriod:
+          type: string
+        maxTeachers:
+          type: integer
+        maxQuestions:
+          type: integer
+        maxPapers:
+          type: integer
+        features:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+
+    Subscription:
+      type: object
+      required: [status]
+      properties:
+        id:
+          type: ["integer", "null"]
+        packageId:
+          type: ["integer", "null"]
+        packageName:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, trial, expired, none]
+        startedAt:
+          type: ["string", "null"]
+        expiresAt:
+          type: ["string", "null"]
+    SubscriptionInput:
+      type: object
+      required: [packageId]
+      properties:
+        packageId:
+          type: integer
+
+    AdminSchool:
+      type: object
+      required: [id, name, teacherCount, questionCount, paperCount]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        teacherCount:
+          type: integer
+        questionCount:
+          type: integer
+        paperCount:
+          type: integer
+        packageName:
+          type: ["string", "null"]
+        subscriptionStatus:
+          type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]
+
+    SchoolStats:
+      type: object
+      required: [teachers, classes, subjects, questions, papers]
+      properties:
+        teachers:
+          type: integer
+        classes:
+          type: integer
+        subjects:
+          type: integer
+        questions:
+          type: integer
+        papers:
+          type: integer
+    AdminStats:
+      type: object
+      required: [schools, teachers, questions, papers, revenue]
+      properties:
+        schools:
+          type: integer
+        teachers:
+          type: integer
+        questions:
+          type: integer
+        papers:
+          type: integer
+        revenue:
+          type: integer
+    TypeCount:
+      type: object
+      required: [type, count]
+      properties:
+        type:
+          type: string
+        count:
+          type: integer

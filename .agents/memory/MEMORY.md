@@ -1,0 +1,1 @@
+- [Multi-tenant ownership checks](tenant-isolation.md) — every client-supplied reference ID must be verified against the caller's school before insert/update/join.
