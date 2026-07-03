@@ -1,0 +1,386 @@
+Add a modern reusable AG Grid Data Table system across the entire Paperz.pk application.
+
+Project branding:
+
+* App name: Paperz.pk
+* Slogan: Test Solution
+
+Goal:
+Replace every normal HTML table/list view in the software with one professional reusable AG Grid component.
+
+Use AG Grid React for all pages where records/lists/tables are shown.
+
+Pages that must use AG Grid:
+
+* Schools list
+* Teachers list
+* Users list
+* Classes list
+* Subjects list
+* Chapters list
+* Topics list
+* Question Bank
+* Generated Papers
+* Saved Papers
+* Paper Templates
+* Subscription Packages
+* Payments
+* Activity Logs
+* Import History
+* Any future list/table page
+
+Create one reusable component named:
+DataGridPro
+
+Technology:
+
+* React
+* TypeScript
+* AG Grid React
+* Tailwind CSS
+* Shadcn UI styling where needed
+
+DataGridPro must support:
+
+Core table features:
+
+* Column resizing
+* Column drag and drop reorder
+* Column pin left/right
+* Show/hide columns
+* Sticky header
+* Sticky first column option
+* Auto-size columns
+* Responsive layout
+* Compact / comfortable / spacious density modes
+
+Filtering:
+
+* Global search bar
+* Column filters
+* Multi-column filters
+* Text filter
+* Number filter
+* Date filter
+* Dropdown/set filter
+* Advanced filter builder
+* Clear all filters button
+* Save filters as custom views
+
+Sorting:
+
+* Single column sorting
+* Multi-column sorting
+* Ascending/descending sorting
+* Reset sorting button
+
+Rows:
+
+* Checkbox row selection
+* Multi-row selection
+* Select all visible rows
+* Select all filtered rows
+* Row hover effect
+* Alternate row background
+* Row double-click action
+* Row action menu
+
+Editing:
+
+* Inline cell editing
+* Full row editing option
+* Add new row button
+* Duplicate row option
+* Delete row option
+* Auto-save edited rows
+* Validation errors on invalid fields
+* Undo/redo support if possible
+
+Bulk actions:
+
+* Delete selected
+* Export selected
+* Approve selected
+* Reject selected
+* Change status
+* Assign selected records
+* Move selected records to another class/subject/chapter where relevant
+
+Import/export:
+
+* CSV export
+* Excel export if available
+* CSV import
+* Excel import if available
+* Export current view
+* Export selected rows
+* Export filtered rows
+
+Pagination/performance:
+
+* Pagination
+* Page size selector: 10, 25, 50, 100, 500
+* Server-side pagination
+* Server-side sorting
+* Server-side filtering
+* Virtual scrolling for large data
+* Loading skeleton
+* Empty state
+* Error state
+* Refresh button
+
+Saved views:
+Allow users to save table layouts/views:
+
+* Column order
+* Hidden columns
+* Filters
+* Sorting
+* Density
+* Pinned columns
+* Page size
+
+Example saved views:
+
+* All Questions
+* My Physics Questions
+* Approved Questions
+* Draft Questions
+* Class 9 Questions
+* Generated Papers This Month
+
+Toolbar:
+Each DataGridPro table should have a top toolbar with:
+
+* Page title
+* Total records count
+* Global search
+* Add button
+* Import button
+* Export button
+* Columns button
+* Filters button
+* Density switcher
+* Refresh button
+* Save View button
+* Clear filters button
+
+Right-click / row action menu:
+Each row should support actions:
+
+* View
+* Edit
+* Duplicate
+* Delete
+* Export
+* Print
+* History
+
+Status bar:
+Show at the bottom:
+
+* Total rows
+* Filtered rows
+* Selected rows
+* Last updated time
+
+Design requirements:
+
+* Professional SaaS dashboard style
+* Clean educational software design
+* Rounded cards
+* Light borders
+* Smooth hover effects
+* Responsive for laptop/tablet
+* Match Paperz.pk branding and logo colors
+* Support dark mode
+
+Question Bank special columns:
+
+* Question ID
+* Class
+* Subject
+* Chapter
+* Topic
+* Question Type
+* Difficulty
+* Medium
+* Marks
+* Question Text
+* Answer
+* Status
+* Created By
+* Created Date
+* Updated Date
+
+Question Bank special filters:
+
+* Class
+* Subject
+* Chapter
+* Topic
+* Question Type
+* Difficulty
+* Medium
+* Marks
+* Status
+* Created By
+
+Generated Papers special columns:
+
+* Paper ID
+* School
+* Teacher
+* Class
+* Subject
+* Total Marks
+* Time Allowed
+* Paper Type
+* Status
+* Created Date
+* Download PDF
+* Actions
+
+Teachers special columns:
+
+* Teacher ID
+* Name
+* Email
+* Phone
+* School
+* Subjects
+* Status
+* Last Login
+* Created Date
+* Actions
+
+Schools special columns:
+
+* School ID
+* School Name
+* City
+* Owner Name
+* Email
+* Phone
+* Package
+* Subscription Status
+* Expiry Date
+* Total Teachers
+* Total Papers
+* Actions
+
+Subjects special columns:
+
+* Subject ID
+* Subject Name
+* Class
+* Board
+* Medium
+* Total Chapters
+* Total Questions
+* Status
+* Actions
+
+Chapters special columns:
+
+* Chapter ID
+* Chapter Name
+* Class
+* Subject
+* Chapter Number
+* Total Topics
+* Total Questions
+* Status
+* Actions
+
+Topics special columns:
+
+* Topic ID
+* Topic Name
+* Chapter
+* Subject
+* Class
+* Total Questions
+* Status
+* Actions
+
+Implementation requirements:
+
+1. Install and configure AG Grid React.
+2. Create reusable DataGridPro component.
+3. Create reusable column definition system.
+4. Create reusable toolbar component.
+5. Create reusable row action menu.
+6. Create reusable filter drawer.
+7. Create reusable saved view system.
+8. Connect DataGridPro with backend APIs.
+9. Use server-side pagination, filtering, and sorting for large tables.
+10. Replace all existing list/table pages with DataGridPro.
+11. Add demo seed data where real data is missing.
+12. Make all tables responsive and production-ready.
+
+Backend requirements:
+Create generic API support for:
+
+* page
+* pageSize
+* search
+* filters
+* sorting
+* selected fields
+* export
+* import
+
+Example API query:
+GET /api/questions?page=1&pageSize=50&search=physics&sortBy=createdAt&sortOrder=desc&class=9&subject=Physics&status=Approved
+
+Save user table preferences in database:
+Table: user_table_views
+
+Fields:
+
+* id
+* userId
+* tableKey
+* viewName
+* columnsConfig
+* filtersConfig
+* sortingConfig
+* density
+* pageSize
+* isDefault
+* createdAt
+* updatedAt
+
+DataGridPro props should include:
+
+* tableKey
+* title
+* columns
+* dataSource
+* totalRows
+* loading
+* rowActions
+* bulkActions
+* enableImport
+* enableExport
+* enableInlineEdit
+* enableSavedViews
+* onAdd
+* onEdit
+* onDelete
+* onDuplicate
+* onRefresh
+
+Create example usage for:
+
+* Question Bank page
+* Teachers page
+* Schools page
+* Generated Papers page
+
+Important:
+Do not create separate table code for every page. Create one reusable DataGridPro and reuse it everywhere with different columns and API endpoints.
+
+Final result:
+Paperz.pk should have a modern Excel-like AG Grid experience on every list page, with professional filters, columns, sorting, saved views, import/export, and bulk actions.
