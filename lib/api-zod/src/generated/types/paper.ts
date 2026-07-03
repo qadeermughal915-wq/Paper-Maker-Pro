@@ -33,4 +33,6 @@ export interface Paper {
   /** @nullable */
   createdAt?: string | null;
   questions: PaperQuestion[];
+  /** Non-fatal notices produced while auto-generating a draft, e.g. when the question bank had fewer questions than requested. */
+  warnings?: string[];
 }

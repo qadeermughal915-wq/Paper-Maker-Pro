@@ -21,6 +21,8 @@ import {
   UpdatePaperBody,
   UpdatePaperResponse,
   DeletePaperParams,
+  GetPaperAvailabilityQueryParams,
+  GetPaperAvailabilityResponse,
 } from "@workspace/api-zod";
 import { asyncHandler } from "../lib/http";
 import { attachUser, requireSchool, type AuthedRequest } from "../lib/auth";
@@ -157,6 +159,7 @@ router.post(
       text: string;
       options?: string[] | null;
     }[] = [];
+    const warnings: string[] = [];
     let order = 0;
 
     const mediumCondition = () => {
@@ -193,17 +196,10 @@ router.post(
         .where(and(...conditions))
         .orderBy(sql`random()`);
 
-      const available = pool.reduce((sum, q) => sum + q.marks, 0);
-      if (available < body.totalMarks) {
-        res.status(400).json({
-          error: `Not enough questions to reach ${body.totalMarks} marks. Only ${available} marks are available from the question bank for this selection. Add more questions or lower the target.`,
-        });
-        return;
-      }
-
       // Greedy fill: take larger-mark questions first, skipping any that
       // would overshoot the target, until the target is met exactly (or as
-      // close as the available marks allow without exceeding it).
+      // close as the available marks allow without exceeding it). Never error
+      // on insufficient supply — fill what we can and warn the teacher.
       const byMarksDesc = [...pool].sort((a, b) => b.marks - a.marks);
       let running = 0;
       for (const q of byMarksDesc) {
@@ -220,6 +216,12 @@ router.post(
           text: q.text,
           options: q.options,
         });
+      }
+
+      if (running < body.totalMarks) {
+        warnings.push(
+          `Requested ${body.totalMarks} marks but the question bank only had enough matching questions for ${running} marks. Add more questions or lower the target to fill the gap.`,
+        );
       }
     } else {
       const counts =
@@ -261,6 +263,12 @@ router.post(
             options: q.options,
           });
         }
+
+        if (pool.length < c.count) {
+          warnings.push(
+            `${TYPE_SECTIONS[c.type]}: requested ${c.count} but only ${pool.length} available in the question bank — included ${pool.length}.`,
+          );
+        }
       }
     }
 
@@ -285,8 +293,62 @@ router.post(
         logoUrl: null,
         createdAt: null,
         questions: selected,
+        warnings,
       }),
     );
+  }),
+);
+
+router.get(
+  "/papers/availability",
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
+    const schoolId = req.localUser!.schoolId!;
+    const rawChapterIds = req.query.chapterIds;
+    const chapterIds =
+      rawChapterIds === undefined
+        ? undefined
+        : Array.isArray(rawChapterIds)
+          ? rawChapterIds
+          : [rawChapterIds];
+    const query = GetPaperAvailabilityQueryParams.parse({
+      ...req.query,
+      chapterIds,
+    });
+
+    const conditions = [
+      eq(questions.schoolId, schoolId),
+      eq(questions.classId, query.classId),
+      eq(questions.subjectId, query.subjectId),
+    ];
+    if (query.chapterIds && query.chapterIds.length)
+      conditions.push(inArray(questions.chapterId, query.chapterIds));
+    if (query.difficulty)
+      conditions.push(eq(questions.difficulty, query.difficulty));
+    if (query.medium === "english")
+      conditions.push(inArray(questions.medium, ["english", "dual"]));
+    else if (query.medium === "urdu")
+      conditions.push(inArray(questions.medium, ["urdu", "dual"]));
+
+    const rows = await db
+      .select({
+        type: questions.type,
+        count: sql<number>`count(*)::int`,
+        marks: sql<number>`coalesce(sum(${questions.marks}), 0)::int`,
+      })
+      .from(questions)
+      .where(and(...conditions))
+      .groupBy(questions.type);
+
+    const byType = new Map(rows.map((r) => [r.type, r]));
+    const result = (Object.keys(TYPE_SECTIONS) as QuestionType[]).map(
+      (type) => ({
+        type,
+        count: byType.get(type)?.count ?? 0,
+        marks: byType.get(type)?.marks ?? 0,
+      }),
+    );
+
+    res.json(GetPaperAvailabilityResponse.parse(result));
   }),
 );
 

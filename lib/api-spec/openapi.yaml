@@ -655,6 +655,52 @@ paths:
                 $ref: "#/components/schemas/Paper"
         "400":
           $ref: "#/components/responses/BadRequest"
+  /papers/availability:
+    get:
+      operationId: getPaperAvailability
+      tags: [papers]
+      summary: Available question counts per type for paper generation
+      description: >-
+        Returns how many questions (and how many marks) are available per
+        question type for the given class/subject filters, so the New Paper
+        screen can show supply before generating.
+      parameters:
+        - name: classId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: subjectId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: medium
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/Medium"
+        - name: chapterIds
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+        - name: difficulty
+          in: query
+          schema:
+            $ref: "#/components/schemas/Difficulty"
+      responses:
+        "200":
+          description: Availability per question type
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuestionAvailability"
+        "400":
+          $ref: "#/components/responses/BadRequest"
   /papers/{id}:
     get:
       operationId: getPaper
@@ -1658,6 +1704,23 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PaperQuestion"
+        warnings:
+          type: array
+          description: >-
+            Non-fatal notices produced while auto-generating a draft, e.g. when
+            the question bank had fewer questions than requested.
+          items:
+            type: string
+    QuestionAvailability:
+      type: object
+      required: [type, count, marks]
+      properties:
+        type:
+          $ref: "#/components/schemas/QuestionType"
+        count:
+          type: integer
+        marks:
+          type: integer
     PaperSummary:
       type: object
       required: [id, title, totalMarks]

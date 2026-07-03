@@ -32,6 +32,7 @@ import type {
   ClassInput,
   ClassUpdate,
   GeneratePaperInput,
+  GetPaperAvailabilityParams,
   HealthStatus,
   ImportRecord,
   ImportResult,
@@ -54,6 +55,7 @@ import type {
   PaperUpdate,
   Payment,
   Question,
+  QuestionAvailability,
   QuestionImportInput,
   QuestionInput,
   QuestionPage,
@@ -2602,6 +2604,91 @@ export const useGeneratePaper = <TError = ErrorType<BadRequestResponse>,
       > => {
       return useMutation(getGeneratePaperMutationOptions(options));
     }
+
+export const getGetPaperAvailabilityUrl = (params: GetPaperAvailabilityParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/papers/availability?${stringifiedParams}` : `/api/papers/availability`
+}
+
+/**
+ * Returns how many questions (and how many marks) are available per question type for the given class/subject filters, so the New Paper screen can show supply before generating.
+ * @summary Available question counts per type for paper generation
+ */
+export const getPaperAvailability = async (params: GetPaperAvailabilityParams, options?: RequestInit): Promise<QuestionAvailability[]> => {
+
+  return customFetch<QuestionAvailability[]>(getGetPaperAvailabilityUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPaperAvailabilityQueryKey = (params?: GetPaperAvailabilityParams,) => {
+    return [
+    `/api/papers/availability`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetPaperAvailabilityQueryOptions = <TData = Awaited<ReturnType<typeof getPaperAvailability>>, TError = ErrorType<BadRequestResponse>>(params: GetPaperAvailabilityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPaperAvailability>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPaperAvailabilityQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPaperAvailability>>> = ({ signal }) => getPaperAvailability(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPaperAvailability>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPaperAvailabilityQueryResult = NonNullable<Awaited<ReturnType<typeof getPaperAvailability>>>
+export type GetPaperAvailabilityQueryError = ErrorType<BadRequestResponse>
+
+
+/**
+ * @summary Available question counts per type for paper generation
+ */
+
+export function useGetPaperAvailability<TData = Awaited<ReturnType<typeof getPaperAvailability>>, TError = ErrorType<BadRequestResponse>>(
+ params: GetPaperAvailabilityParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPaperAvailability>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPaperAvailabilityQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetPaperUrl = (id: number,) => {
 

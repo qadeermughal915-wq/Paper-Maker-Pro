@@ -345,6 +345,14 @@ export interface Paper {
   /** @nullable */
   createdAt?: string | null;
   questions: PaperQuestion[];
+  /** Non-fatal notices produced while auto-generating a draft, e.g. when the question bank had fewer questions than requested. */
+  warnings?: string[];
+}
+
+export interface QuestionAvailability {
+  type: QuestionType;
+  count: number;
+  marks: number;
 }
 
 export interface PaperSummary {
@@ -689,6 +697,14 @@ type?: QuestionType;
 medium?: Medium;
 difficulty?: Difficulty;
 search?: string;
+};
+
+export type GetPaperAvailabilityParams = {
+classId: number;
+subjectId: number;
+medium: Medium;
+chapterIds?: number[];
+difficulty?: Difficulty;
 };
 
 export type ListViewsParams = {

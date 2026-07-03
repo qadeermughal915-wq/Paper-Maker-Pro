@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useListClasses, useListSubjects, useListChapters, useGeneratePaper, useCreatePaper, getListSubjectsQueryKey, getListChaptersQueryKey } from "@workspace/api-client-react";
+import { useListClasses, useListSubjects, useListChapters, useGeneratePaper, useCreatePaper, useGetPaperAvailability, getListSubjectsQueryKey, getListChaptersQueryKey, getGetPaperAvailabilityQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,25 @@ export default function NewPaperPage() {
     { subjectId: Number(subjectId) || undefined },
     { query: { enabled: !!subjectId, queryKey: getListChaptersQueryKey({ subjectId: Number(subjectId) || undefined }) } },
   );
+
+  const availabilityParams = {
+    classId: Number(classId),
+    subjectId: Number(subjectId),
+    medium,
+    ...(selectedChapters.length > 0 ? { chapterIds: selectedChapters } : {}),
+    ...(difficulty ? { difficulty: difficulty as Difficulty } : {}),
+  };
+  const { data: availability } = useGetPaperAvailability(availabilityParams, {
+    query: {
+      enabled: !!classId && !!subjectId,
+      queryKey: getGetPaperAvailabilityQueryKey(availabilityParams),
+    },
+  });
+  const availableByType: Record<string, number> = {};
+  availability?.forEach((a) => {
+    availableByType[a.type] = a.count;
+  });
+  const availableMarks = availability?.reduce((sum, a) => sum + a.marks, 0) ?? 0;
 
   const generatePaper = useGeneratePaper();
   const createPaper = useCreatePaper();
@@ -92,7 +111,16 @@ export default function NewPaperPage() {
           })),
         },
       });
-      toast({ title: "Paper Generated successfully" });
+      if (draft.warnings && draft.warnings.length > 0) {
+        toast({
+          title: "Paper generated with fewer questions than requested",
+          description: draft.warnings.join(" "),
+          variant: "destructive",
+          duration: 10000,
+        });
+      } else {
+        toast({ title: "Paper Generated successfully" });
+      }
       setLocation(`/papers/${saved.id}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "An error occurred";
@@ -218,24 +246,40 @@ export default function NewPaperPage() {
                 <p className="text-xs text-muted-foreground">
                   We'll select questions to reach this total. Optionally limit the
                   question types below (leave all at 0 to allow any type).
+                  {classId && subjectId ? (
+                    <> About <span className="font-medium text-foreground">{availableMarks}</span> marks are available for this selection.</>
+                  ) : null}
                 </p>
                 <div className="grid grid-cols-3 gap-4 pt-2">
                   {['mcq', 'short', 'long', 'exercise', 'conceptual', 'past_paper'].map(type => (
                     <div key={type} className="space-y-1">
                       <Label className="capitalize text-xs">{type.replace('_', ' ')}</Label>
                       <Input type="number" min="0" value={counts[type] || 0} onChange={e => setCounts({...counts, [type]: Number(e.target.value)})} />
+                      {classId && subjectId ? (
+                        <p className="text-[11px] text-muted-foreground">{availableByType[type] ?? 0} available</p>
+                      ) : null}
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-4">
-                {['mcq', 'short', 'long', 'exercise', 'conceptual', 'past_paper'].map(type => (
-                  <div key={type} className="space-y-1">
-                    <Label className="capitalize text-xs">{type.replace('_', ' ')}</Label>
-                    <Input type="number" min="0" value={counts[type] || 0} onChange={e => setCounts({...counts, [type]: Number(e.target.value)})} />
-                  </div>
-                ))}
+                {['mcq', 'short', 'long', 'exercise', 'conceptual', 'past_paper'].map(type => {
+                  const avail = availableByType[type] ?? 0;
+                  const requested = counts[type] || 0;
+                  const short = !!classId && !!subjectId && requested > avail;
+                  return (
+                    <div key={type} className="space-y-1">
+                      <Label className="capitalize text-xs">{type.replace('_', ' ')}</Label>
+                      <Input type="number" min="0" value={requested} onChange={e => setCounts({...counts, [type]: Number(e.target.value)})} />
+                      {classId && subjectId ? (
+                        <p className={`text-[11px] ${short ? "text-destructive" : "text-muted-foreground"}`}>
+                          {avail} available{short ? ` — only ${avail} will be included` : ""}
+                        </p>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

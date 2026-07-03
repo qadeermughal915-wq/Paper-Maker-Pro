@@ -696,7 +696,8 @@ export const CreatePaperResponse = zod.object({
   "marks": zod.number(),
   "text": zod.string(),
   "options": zod.array(zod.string()).nullish()
-}))
+})),
+  "warnings": zod.array(zod.string()).optional().describe('Non-fatal notices produced while auto-generating a draft, e.g. when the question bank had fewer questions than requested.')
 })
 
 
@@ -750,8 +751,29 @@ export const GeneratePaperResponse = zod.object({
   "marks": zod.number(),
   "text": zod.string(),
   "options": zod.array(zod.string()).nullish()
-}))
+})),
+  "warnings": zod.array(zod.string()).optional().describe('Non-fatal notices produced while auto-generating a draft, e.g. when the question bank had fewer questions than requested.')
 })
+
+
+/**
+ * Returns how many questions (and how many marks) are available per question type for the given class/subject filters, so the New Paper screen can show supply before generating.
+ * @summary Available question counts per type for paper generation
+ */
+export const GetPaperAvailabilityQueryParams = zod.object({
+  "classId": zod.coerce.number(),
+  "subjectId": zod.coerce.number(),
+  "medium": zod.enum(['urdu', 'english', 'dual']),
+  "chapterIds": zod.array(zod.coerce.number()).optional(),
+  "difficulty": zod.enum(['easy', 'medium', 'hard']).optional()
+})
+
+export const GetPaperAvailabilityResponseItem = zod.object({
+  "type": zod.enum(['mcq', 'short', 'long', 'exercise', 'conceptual', 'past_paper']),
+  "count": zod.number(),
+  "marks": zod.number()
+})
+export const GetPaperAvailabilityResponse = zod.array(GetPaperAvailabilityResponseItem)
 
 
 /**
@@ -785,7 +807,8 @@ export const GetPaperResponse = zod.object({
   "marks": zod.number(),
   "text": zod.string(),
   "options": zod.array(zod.string()).nullish()
-}))
+})),
+  "warnings": zod.array(zod.string()).optional().describe('Non-fatal notices produced while auto-generating a draft, e.g. when the question bank had fewer questions than requested.')
 })
 
 
@@ -842,7 +865,8 @@ export const UpdatePaperResponse = zod.object({
   "marks": zod.number(),
   "text": zod.string(),
   "options": zod.array(zod.string()).nullish()
-}))
+})),
+  "warnings": zod.array(zod.string()).optional().describe('Non-fatal notices produced while auto-generating a draft, e.g. when the question bank had fewer questions than requested.')
 })
 
 
