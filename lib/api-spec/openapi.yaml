@@ -1241,12 +1241,12 @@ components:
           type: string
     QuestionImportInput:
       type: object
-      required: [classId, subjectId, rows]
+      required: [rows]
       properties:
         classId:
-          type: integer
+          type: ["integer", "null"]
         subjectId:
-          type: integer
+          type: ["integer", "null"]
         chapterId:
           type: ["integer", "null"]
         rows:
@@ -1272,6 +1272,14 @@ components:
           items:
             type: string
         answer:
+          type: string
+        className:
+          type: string
+        subjectName:
+          type: string
+        chapterName:
+          type: string
+        topicName:
           type: string
     ImportResult:
       type: object
@@ -1467,6 +1475,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SectionCount"
+        totalMarks:
+          type: integer
+          minimum: 1
         durationMinutes:
           type: integer
         examDate:

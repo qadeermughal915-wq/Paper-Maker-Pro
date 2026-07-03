@@ -519,8 +519,8 @@ export const CreateQuestionResponse = zod.object({
  * @summary Bulk import questions from parsed CSV/Excel rows
  */
 export const ImportQuestionsBody = zod.object({
-  "classId": zod.number(),
-  "subjectId": zod.number(),
+  "classId": zod.number().nullish(),
+  "subjectId": zod.number().nullish(),
   "chapterId": zod.number().nullish(),
   "rows": zod.array(zod.object({
   "text": zod.string(),
@@ -529,7 +529,11 @@ export const ImportQuestionsBody = zod.object({
   "difficulty": zod.string().optional(),
   "marks": zod.number().optional(),
   "options": zod.array(zod.string()).optional(),
-  "answer": zod.string().optional()
+  "answer": zod.string().optional(),
+  "className": zod.string().optional(),
+  "subjectName": zod.string().optional(),
+  "chapterName": zod.string().optional(),
+  "topicName": zod.string().optional()
 }))
 })
 
@@ -703,6 +707,7 @@ export const generatePaperBodyCountsItemCountMin = 0;
 
 
 
+
 export const GeneratePaperBody = zod.object({
   "title": zod.string().optional(),
   "classId": zod.number(),
@@ -714,6 +719,7 @@ export const GeneratePaperBody = zod.object({
   "type": zod.enum(['mcq', 'short', 'long', 'exercise', 'conceptual', 'past_paper']),
   "count": zod.number().min(generatePaperBodyCountsItemCountMin)
 })).optional(),
+  "totalMarks": zod.number().min(1).optional(),
   "durationMinutes": zod.number().optional(),
   "examDate": zod.string().optional(),
   "instructions": zod.string().optional()

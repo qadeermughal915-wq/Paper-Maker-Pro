@@ -267,11 +267,17 @@ export interface QuestionImportRow {
   marks?: number;
   options?: string[];
   answer?: string;
+  className?: string;
+  subjectName?: string;
+  chapterName?: string;
+  topicName?: string;
 }
 
 export interface QuestionImportInput {
-  classId: number;
-  subjectId: number;
+  /** @nullable */
+  classId?: number | null;
+  /** @nullable */
+  subjectId?: number | null;
   /** @nullable */
   chapterId?: number | null;
   rows: QuestionImportRow[];
@@ -394,6 +400,8 @@ export interface GeneratePaperInput {
   medium: Medium;
   difficulty?: Difficulty | null;
   counts?: SectionCount[];
+  /** @minimum 1 */
+  totalMarks?: number;
   durationMinutes?: number;
   examDate?: string;
   instructions?: string;

@@ -46,6 +46,13 @@ function parseRows(data: ArrayBuffer): QuestionImportRow[] {
         : undefined;
       const marksRaw = lower["marks"];
       const marks = marksRaw === "" || marksRaw == null ? undefined : Number(marksRaw);
+      const str = (...keys: string[]) => {
+        for (const k of keys) {
+          const v = lower[k];
+          if (v != null && String(v).trim()) return String(v).trim();
+        }
+        return undefined;
+      };
       return {
         text,
         type: lower["type"] ? String(lower["type"]).trim().toLowerCase() : undefined,
@@ -54,6 +61,10 @@ function parseRows(data: ArrayBuffer): QuestionImportRow[] {
         marks: Number.isFinite(marks) ? marks : undefined,
         options,
         answer: lower["answer"] ? String(lower["answer"]).trim() : undefined,
+        className: str("class", "classname"),
+        subjectName: str("subject", "subjectname"),
+        chapterName: str("chapter", "chaptername"),
+        topicName: str("topic", "topicname"),
       } as QuestionImportRow;
     })
     .filter((r) => r.text.length > 0);
@@ -114,16 +125,22 @@ export function ImportQuestionsDialog({
     }
   };
 
+  const rowsHaveTaxonomy = rows.every((r) => r.className && r.subjectName);
+
   const handleImport = async () => {
-    if (!classId || !subjectId || !rows.length) {
-      toast({ title: "Missing fields", description: "Select class, subject and a file with questions.", variant: "destructive" });
+    if (!rows.length) {
+      toast({ title: "No questions", description: "Upload a file with questions first.", variant: "destructive" });
+      return;
+    }
+    if ((!classId || !subjectId) && !rowsHaveTaxonomy) {
+      toast({ title: "Missing class/subject", description: "Select a class and subject, or include class & subject columns in your file.", variant: "destructive" });
       return;
     }
     try {
       const res = await importQuestions.mutateAsync({
         data: {
-          classId: Number(classId),
-          subjectId: Number(subjectId),
+          classId: classId ? Number(classId) : null,
+          subjectId: subjectId ? Number(subjectId) : null,
           chapterId: chapterId ? Number(chapterId) : null,
           rows,
         },
@@ -148,6 +165,8 @@ export function ImportQuestionsDialog({
           <p className="text-sm text-muted-foreground">
             Upload a CSV or Excel file. Columns: <span className="font-medium">text</span> (required),
             {" "}type, medium, difficulty, marks, options (separate with | ), answer.
+            You can also add <span className="font-medium">class, subject, chapter, topic</span> columns
+            to map each row itself — those override the selections below. Names must match your existing curriculum.
           </p>
 
           <div className="grid md:grid-cols-3 gap-3">

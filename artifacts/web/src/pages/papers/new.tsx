@@ -22,7 +22,11 @@ export default function NewPaperPage() {
   const [medium, setMedium] = useState<Medium>("english");
   const [difficulty, setDifficulty] = useState<Difficulty | "">("");
   const [selectedChapters, setSelectedChapters] = useState<number[]>([]);
-  
+
+  // Selection mode: hit a target total marks, or specify per-type counts.
+  const [mode, setMode] = useState<"marks" | "counts">("counts");
+  const [totalMarks, setTotalMarks] = useState<number>(50);
+
   // Section counts
   const [counts, setCounts] = useState<Record<string, number>>({ mcq: 10, short: 5, long: 2 });
 
@@ -47,6 +51,11 @@ export default function NewPaperPage() {
 
     const sections = Object.entries(counts).filter(([_, count]) => count > 0).map(([type, count]) => ({ type: type as QuestionType, count }));
 
+    if (mode === "marks" && (!totalMarks || totalMarks < 1)) {
+      toast({ title: "Validation Error", description: "Enter a target total marks of at least 1", variant: "destructive" });
+      return;
+    }
+
     try {
       const draft = await generatePaper.mutateAsync({
         data: {
@@ -57,6 +66,7 @@ export default function NewPaperPage() {
           difficulty: difficulty ? difficulty as Difficulty : null,
           chapterIds: selectedChapters.length > 0 ? selectedChapters : undefined,
           counts: sections,
+          totalMarks: mode === "marks" ? totalMarks : undefined,
           durationMinutes: 120,
         }
       });
@@ -176,15 +186,58 @@ export default function NewPaperPage() {
           )}
 
           <div className="space-y-4 pt-4 border-t">
-            <Label>Question Quantities</Label>
-            <div className="grid grid-cols-3 gap-4">
-              {['mcq', 'short', 'long', 'exercise', 'conceptual', 'past_paper'].map(type => (
-                <div key={type} className="space-y-1">
-                  <Label className="capitalize text-xs">{type.replace('_', ' ')}</Label>
-                  <Input type="number" min="0" value={counts[type] || 0} onChange={e => setCounts({...counts, [type]: Number(e.target.value)})} />
-                </div>
-              ))}
+            <Label>How should we pick questions?</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant={mode === "counts" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setMode("counts")}
+              >
+                By question count
+              </Button>
+              <Button
+                type="button"
+                variant={mode === "marks" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setMode("marks")}
+              >
+                By total marks
+              </Button>
             </div>
+
+            {mode === "marks" ? (
+              <div className="space-y-1 max-w-xs">
+                <Label className="text-xs">Target Total Marks</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={totalMarks}
+                  onChange={e => setTotalMarks(Number(e.target.value))}
+                />
+                <p className="text-xs text-muted-foreground">
+                  We'll select questions to reach this total. Optionally limit the
+                  question types below (leave all at 0 to allow any type).
+                </p>
+                <div className="grid grid-cols-3 gap-4 pt-2">
+                  {['mcq', 'short', 'long', 'exercise', 'conceptual', 'past_paper'].map(type => (
+                    <div key={type} className="space-y-1">
+                      <Label className="capitalize text-xs">{type.replace('_', ' ')}</Label>
+                      <Input type="number" min="0" value={counts[type] || 0} onChange={e => setCounts({...counts, [type]: Number(e.target.value)})} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-4">
+                {['mcq', 'short', 'long', 'exercise', 'conceptual', 'past_paper'].map(type => (
+                  <div key={type} className="space-y-1">
+                    <Label className="capitalize text-xs">{type.replace('_', ' ')}</Label>
+                    <Input type="number" min="0" value={counts[type] || 0} onChange={e => setCounts({...counts, [type]: Number(e.target.value)})} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <Button className="w-full" size="lg" onClick={handleGenerate} disabled={generatePaper.isPending || createPaper.isPending}>

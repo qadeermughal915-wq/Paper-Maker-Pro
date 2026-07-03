@@ -17,6 +17,8 @@ export interface GeneratePaperInput {
   medium: Medium;
   difficulty?: Difficulty | null;
   counts?: SectionCount[];
+  /** @minimum 1 */
+  totalMarks?: number;
   durationMinutes?: number;
   examDate?: string;
   instructions?: string;

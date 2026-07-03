@@ -1,8 +1,8 @@
 import { Router, type IRouter, type Response } from "express";
 import { getAuth } from "@clerk/express";
 import { db } from "@workspace/db";
-import { schools, users } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { schools, users, packages, subscriptions } from "@workspace/db";
+import { and, asc, eq } from "drizzle-orm";
 import {
   GetMeResponse,
   OnboardSchoolBody,
@@ -148,6 +148,33 @@ router.post(
         })
         .returning();
       userId = created.id;
+    }
+
+    // Assign a default subscription so plan limits apply from day one.
+    // Prefer the cheapest active package (the free/starter tier).
+    const [defaultPkg] = await db
+      .select({ id: packages.id })
+      .from(packages)
+      .where(eq(packages.isActive, true))
+      .orderBy(asc(packages.price), asc(packages.id))
+      .limit(1);
+    if (defaultPkg) {
+      const [existingSub] = await db
+        .select({ id: subscriptions.id })
+        .from(subscriptions)
+        .where(
+          and(
+            eq(subscriptions.schoolId, school.id),
+            eq(subscriptions.status, "active"),
+          ),
+        );
+      if (!existingSub) {
+        await db.insert(subscriptions).values({
+          schoolId: school.id,
+          packageId: defaultPkg.id,
+          status: "active",
+        });
+      }
     }
 
     await seedStarterCurriculum(school.id);

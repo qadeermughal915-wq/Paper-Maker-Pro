@@ -8,8 +8,10 @@
 import type { QuestionImportRow } from './questionImportRow';
 
 export interface QuestionImportInput {
-  classId: number;
-  subjectId: number;
+  /** @nullable */
+  classId?: number | null;
+  /** @nullable */
+  subjectId?: number | null;
   /** @nullable */
   chapterId?: number | null;
   rows: QuestionImportRow[];

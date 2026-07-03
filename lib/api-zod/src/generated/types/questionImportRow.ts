@@ -14,4 +14,8 @@ export interface QuestionImportRow {
   marks?: number;
   options?: string[];
   answer?: string;
+  className?: string;
+  subjectName?: string;
+  chapterName?: string;
+  topicName?: string;
 }

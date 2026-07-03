@@ -225,14 +225,69 @@ router.post(
       return;
     }
 
-    const ownershipError = await ownsTaxonomy(schoolId, {
-      classId: body.classId,
-      subjectId: body.subjectId,
-      chapterId: body.chapterId ?? null,
-    });
-    if (ownershipError) {
-      res.status(400).json({ error: ownershipError });
-      return;
+    // Load the school's taxonomy once so per-row name columns can be
+    // resolved to IDs without a query per row. Names are matched
+    // case-insensitively; chapters/topics are scoped to their parent.
+    const [schoolClasses, schoolSubjects, schoolChapters, schoolTopics] =
+      await Promise.all([
+        db
+          .select({ id: classes.id, name: classes.name })
+          .from(classes)
+          .where(eq(classes.schoolId, schoolId)),
+        db
+          .select({
+            id: subjects.id,
+            name: subjects.name,
+            classId: subjects.classId,
+          })
+          .from(subjects)
+          .where(eq(subjects.schoolId, schoolId)),
+        db
+          .select({
+            id: chapters.id,
+            name: chapters.name,
+            subjectId: chapters.subjectId,
+          })
+          .from(chapters)
+          .where(eq(chapters.schoolId, schoolId)),
+        db
+          .select({
+            id: topics.id,
+            name: topics.name,
+            chapterId: topics.chapterId,
+          })
+          .from(topics)
+          .where(eq(topics.schoolId, schoolId)),
+      ]);
+
+    const norm = (s: string) => s.trim().toLowerCase();
+    const findClass = (name: string) =>
+      schoolClasses.find((c) => norm(c.name) === norm(name));
+    const findSubject = (name: string, classId: number) =>
+      schoolSubjects.find(
+        (s) => norm(s.name) === norm(name) && s.classId === classId,
+      );
+    const findChapter = (name: string, subjectId: number) =>
+      schoolChapters.find(
+        (c) => norm(c.name) === norm(name) && c.subjectId === subjectId,
+      );
+    const findTopic = (name: string, chapterId: number) =>
+      schoolTopics.find(
+        (t) => norm(t.name) === norm(name) && t.chapterId === chapterId,
+      );
+
+    // Validate request-level defaults (used when a row omits its own
+    // class/subject/chapter columns).
+    if (body.classId != null || body.subjectId != null || body.chapterId != null) {
+      const ownershipError = await ownsTaxonomy(schoolId, {
+        classId: body.classId ?? null,
+        subjectId: body.subjectId ?? null,
+        chapterId: body.chapterId ?? null,
+      });
+      if (ownershipError) {
+        res.status(400).json({ error: ownershipError });
+        return;
+      }
     }
 
     for (let i = 0; i < body.rows.length; i++) {
@@ -242,6 +297,90 @@ router.post(
         errors.push({ row: rowNum, message: "Missing question text" });
         continue;
       }
+
+      // Resolve class: row column overrides the request-level default.
+      let classId = body.classId ?? null;
+      if (row.className && row.className.trim()) {
+        const c = findClass(row.className);
+        if (!c) {
+          errors.push({
+            row: rowNum,
+            message: `Unknown class "${row.className}"`,
+          });
+          continue;
+        }
+        classId = c.id;
+      }
+      if (classId == null) {
+        errors.push({ row: rowNum, message: "Missing class" });
+        continue;
+      }
+
+      // Resolve subject (must belong to the resolved class).
+      let subjectId = body.subjectId ?? null;
+      if (row.subjectName && row.subjectName.trim()) {
+        const s = findSubject(row.subjectName, classId);
+        if (!s) {
+          errors.push({
+            row: rowNum,
+            message: `Unknown subject "${row.subjectName}" for the class`,
+          });
+          continue;
+        }
+        subjectId = s.id;
+      }
+      if (subjectId == null) {
+        errors.push({ row: rowNum, message: "Missing subject" });
+        continue;
+      }
+      // Guard: a request-level subject must match the resolved class.
+      if (
+        !schoolSubjects.some(
+          (s) => s.id === subjectId && s.classId === classId,
+        )
+      ) {
+        errors.push({
+          row: rowNum,
+          message: "Subject does not belong to the class",
+        });
+        continue;
+      }
+
+      // Resolve chapter (optional).
+      let chapterId = body.chapterId ?? null;
+      if (row.chapterName && row.chapterName.trim()) {
+        const ch = findChapter(row.chapterName, subjectId);
+        if (!ch) {
+          errors.push({
+            row: rowNum,
+            message: `Unknown chapter "${row.chapterName}" for the subject`,
+          });
+          continue;
+        }
+        chapterId = ch.id;
+      }
+
+      // Resolve topic (optional, requires a chapter).
+      let topicId: number | null = null;
+      if (row.topicName && row.topicName.trim()) {
+        if (chapterId == null) {
+          errors.push({
+            row: rowNum,
+            message: "A topic requires a chapter",
+          });
+          continue;
+        }
+        const t = findTopic(row.topicName, chapterId);
+        if (!t) {
+          errors.push({
+            row: rowNum,
+            message: `Unknown topic "${row.topicName}" for the chapter`,
+          });
+          continue;
+        }
+        topicId = t.id;
+      }
+
       const type = (row.type ?? "short").toLowerCase();
       const medium = (row.medium ?? "english").toLowerCase();
       const difficulty = (row.difficulty ?? "easy").toLowerCase();
@@ -268,9 +407,10 @@ router.post(
       try {
         await db.insert(questions).values({
           schoolId,
-          classId: body.classId,
-          subjectId: body.subjectId,
-          chapterId: body.chapterId ?? null,
+          classId,
+          subjectId,
+          chapterId,
+          topicId,
           type,
           medium,
           difficulty,

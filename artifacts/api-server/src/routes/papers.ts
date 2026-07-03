@@ -147,11 +147,6 @@ router.post(
         and(eq(subjects.id, body.subjectId), eq(subjects.schoolId, schoolId)),
       );
 
-    const counts =
-      body.counts && body.counts.length
-        ? body.counts
-        : [{ type: "mcq" as QuestionType, count: 5 }];
-
     const selected: {
       questionId: number;
       order: number;
@@ -163,41 +158,108 @@ router.post(
     }[] = [];
     let order = 0;
 
-    for (const c of counts) {
-      if (c.count <= 0) continue;
+    const mediumCondition = () => {
+      if (body.medium === "english")
+        return inArray(questions.medium, ["english", "dual"]);
+      if (body.medium === "urdu")
+        return inArray(questions.medium, ["urdu", "dual"]);
+      return undefined;
+    };
+
+    if (body.totalMarks != null) {
+      // Target-marks mode: pick questions to hit the requested total marks.
       const conditions = [
         eq(questions.schoolId, schoolId),
         eq(questions.classId, body.classId),
         eq(questions.subjectId, body.subjectId),
-        eq(questions.type, c.type),
       ];
       if (body.chapterIds && body.chapterIds.length)
         conditions.push(inArray(questions.chapterId, body.chapterIds));
       if (body.difficulty)
         conditions.push(eq(questions.difficulty, body.difficulty));
-      if (body.medium === "english")
-        conditions.push(inArray(questions.medium, ["english", "dual"]));
-      else if (body.medium === "urdu")
-        conditions.push(inArray(questions.medium, ["urdu", "dual"]));
+      const mc = mediumCondition();
+      if (mc) conditions.push(mc);
+      // If specific types were requested (count > 0), restrict to them.
+      const requestedTypes = (body.counts ?? [])
+        .filter((c) => c.count > 0)
+        .map((c) => c.type);
+      if (requestedTypes.length)
+        conditions.push(inArray(questions.type, requestedTypes));
 
       const pool = await db
         .select()
         .from(questions)
         .where(and(...conditions))
-        .orderBy(sql`random()`)
-        .limit(c.count);
+        .orderBy(sql`random()`);
 
-      for (const q of pool) {
+      const available = pool.reduce((sum, q) => sum + q.marks, 0);
+      if (available < body.totalMarks) {
+        res.status(400).json({
+          error: `Not enough questions to reach ${body.totalMarks} marks. Only ${available} marks are available from the question bank for this selection. Add more questions or lower the target.`,
+        });
+        return;
+      }
+
+      // Greedy fill: take larger-mark questions first, skipping any that
+      // would overshoot the target, until the target is met exactly (or as
+      // close as the available marks allow without exceeding it).
+      const byMarksDesc = [...pool].sort((a, b) => b.marks - a.marks);
+      let running = 0;
+      for (const q of byMarksDesc) {
+        if (running >= body.totalMarks) break;
+        if (running + q.marks > body.totalMarks) continue;
         order += 1;
+        running += q.marks;
         selected.push({
           questionId: q.id,
           order,
-          section: TYPE_SECTIONS[c.type],
-          type: c.type,
+          section: TYPE_SECTIONS[q.type as QuestionType],
+          type: q.type as QuestionType,
           marks: q.marks,
           text: q.text,
           options: q.options,
         });
+      }
+    } else {
+      const counts =
+        body.counts && body.counts.length
+          ? body.counts
+          : [{ type: "mcq" as QuestionType, count: 5 }];
+
+      for (const c of counts) {
+        if (c.count <= 0) continue;
+        const conditions = [
+          eq(questions.schoolId, schoolId),
+          eq(questions.classId, body.classId),
+          eq(questions.subjectId, body.subjectId),
+          eq(questions.type, c.type),
+        ];
+        if (body.chapterIds && body.chapterIds.length)
+          conditions.push(inArray(questions.chapterId, body.chapterIds));
+        if (body.difficulty)
+          conditions.push(eq(questions.difficulty, body.difficulty));
+        const mc = mediumCondition();
+        if (mc) conditions.push(mc);
+
+        const pool = await db
+          .select()
+          .from(questions)
+          .where(and(...conditions))
+          .orderBy(sql`random()`)
+          .limit(c.count);
+
+        for (const q of pool) {
+          order += 1;
+          selected.push({
+            questionId: q.id,
+            order,
+            section: TYPE_SECTIONS[c.type],
+            type: c.type,
+            marks: q.marks,
+            text: q.text,
+            options: q.options,
+          });
+        }
       }
     }
 
