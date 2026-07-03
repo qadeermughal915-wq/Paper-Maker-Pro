@@ -26,6 +26,7 @@ import { asyncHandler } from "../lib/http";
 import { attachUser, requireSchool, type AuthedRequest } from "../lib/auth";
 import { renderPaperPdf } from "../lib/pdf";
 import { enforceLimit } from "../lib/limits";
+import { ownsClassSubject, ownsQuestionIds } from "../lib/ownership";
 
 const router: IRouter = Router();
 
@@ -236,6 +237,28 @@ router.post(
       res.status(403).json({ error: limitError });
       return;
     }
+
+    const ownershipError = await ownsClassSubject(
+      schoolId,
+      body.classId,
+      body.subjectId,
+    );
+    if (ownershipError) {
+      res.status(400).json({ error: ownershipError });
+      return;
+    }
+
+    const questionOwnershipError = await ownsQuestionIds(
+      schoolId,
+      body.questions
+        .map((q) => q.questionId)
+        .filter((id): id is number => typeof id === "number"),
+    );
+    if (questionOwnershipError) {
+      res.status(400).json({ error: questionOwnershipError });
+      return;
+    }
+
     const totalMarks = body.questions.reduce((sum, q) => sum + q.marks, 0);
 
     const [school] = await db
@@ -309,6 +332,19 @@ router.patch(
     if (!existing) {
       res.status(404).json({ error: "Paper not found" });
       return;
+    }
+
+    if (body.questions) {
+      const questionOwnershipError = await ownsQuestionIds(
+        schoolId,
+        body.questions
+          .map((q) => q.questionId)
+          .filter((id): id is number => typeof id === "number"),
+      );
+      if (questionOwnershipError) {
+        res.status(400).json({ error: questionOwnershipError });
+        return;
+      }
     }
 
     const totalMarks = body.questions
