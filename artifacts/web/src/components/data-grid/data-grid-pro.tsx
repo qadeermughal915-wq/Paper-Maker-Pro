@@ -116,6 +116,8 @@ interface DataGridProProps<T> {
   bulkActions?: BulkAction<T>[];
   onCellEdited?: (row: T, field: string, newValue: unknown) => void;
   toolbarFilters?: ReactNode;
+  filterChips?: ReactNode;
+  searchValue?: string;
   onClearFilters?: () => void;
   pageSizeOptions?: number[];
   serverMode?: ServerMode;
@@ -149,6 +151,8 @@ export function DataGridPro<T>(props: DataGridProProps<T>) {
     bulkActions,
     onCellEdited,
     toolbarFilters,
+    filterChips,
+    searchValue,
     onClearFilters,
     pageSizeOptions = DEFAULT_PAGE_SIZES,
     serverMode,
@@ -411,7 +415,7 @@ export function DataGridPro<T>(props: DataGridProProps<T>) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search..."
-            value={search}
+            value={searchValue ?? search}
             onChange={(e) => handleSearch(e.target.value)}
             className="pl-9 h-9"
           />
@@ -536,6 +540,11 @@ export function DataGridPro<T>(props: DataGridProProps<T>) {
           </Button>
         )}
       </div>
+
+      {/* Active filter chips */}
+      {filterChips && (
+        <div className="flex flex-wrap items-center gap-2">{filterChips}</div>
+      )}
 
       {/* Bulk actions bar */}
       {enableSelection && selectedCount > 0 && bulkActions?.length ? (

@@ -21,7 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Pencil, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Pencil, Trash2, X } from "lucide-react";
 import { QuestionFormDialog } from "@/components/questions/question-form-dialog";
 import { ImportQuestionsDialog } from "@/components/questions/import-questions-dialog";
 import { DataGridPro, type ColDef } from "@/components/data-grid/data-grid-pro";
@@ -135,6 +136,120 @@ export default function QuestionBankPage() {
   };
 
   const resetPage = () => setPage(0);
+
+  const clearAll = () => {
+    setClassId("");
+    setSubjectId("");
+    setChapterId("");
+    setTopicId("");
+    setType("");
+    setSearch("");
+    resetPage();
+  };
+
+  const typeLabels: Record<string, string> = {
+    mcq: "MCQ",
+    short: "Short Q",
+    long: "Long Q",
+  };
+
+  const activeFilters: { key: string; label: string; onRemove: () => void }[] = [];
+  if (activeClassId !== undefined) {
+    activeFilters.push({
+      key: "class",
+      label: `Class: ${classes?.find((c) => c.id === activeClassId)?.name ?? activeClassId}`,
+      onRemove: () => {
+        setClassId("");
+        setSubjectId("");
+        setChapterId("");
+        setTopicId("");
+        resetPage();
+      },
+    });
+  }
+  if (activeSubjectId !== undefined) {
+    activeFilters.push({
+      key: "subject",
+      label: `Subject: ${subjects?.find((s) => s.id === activeSubjectId)?.name ?? activeSubjectId}`,
+      onRemove: () => {
+        setSubjectId("");
+        setChapterId("");
+        setTopicId("");
+        resetPage();
+      },
+    });
+  }
+  if (activeChapterId !== undefined) {
+    activeFilters.push({
+      key: "chapter",
+      label: `Chapter: ${chapters?.find((c) => c.id === activeChapterId)?.name ?? activeChapterId}`,
+      onRemove: () => {
+        setChapterId("");
+        setTopicId("");
+        resetPage();
+      },
+    });
+  }
+  if (activeTopicId !== undefined) {
+    activeFilters.push({
+      key: "topic",
+      label: `Topic: ${topics?.find((t) => t.id === activeTopicId)?.name ?? activeTopicId}`,
+      onRemove: () => {
+        setTopicId("");
+        resetPage();
+      },
+    });
+  }
+  if (activeType !== undefined) {
+    activeFilters.push({
+      key: "type",
+      label: `Type: ${typeLabels[activeType] ?? activeType}`,
+      onRemove: () => {
+        setType("");
+        resetPage();
+      },
+    });
+  }
+  if (search) {
+    activeFilters.push({
+      key: "search",
+      label: `Search: ${search}`,
+      onRemove: () => {
+        setSearch("");
+        resetPage();
+      },
+    });
+  }
+
+  const filterChips =
+    activeFilters.length > 0 ? (
+      <>
+        {activeFilters.map((f) => (
+          <span
+            key={f.key}
+            className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary text-xs font-medium pl-3 pr-1 py-1"
+          >
+            {f.label}
+            <button
+              type="button"
+              onClick={f.onRemove}
+              aria-label={`Remove ${f.label} filter`}
+              className="rounded-full p-0.5 hover:bg-primary/20"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </span>
+        ))}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={clearAll}
+          className="h-7 text-muted-foreground"
+        >
+          Clear all
+        </Button>
+      </>
+    ) : null;
 
   const columnDefs: ColDef<Question>[] = [
     {
@@ -319,15 +434,9 @@ export default function QuestionBankPage() {
         onImport={() => setImportOpen(true)}
         exportFileName="question-bank"
         toolbarFilters={filters}
-        onClearFilters={() => {
-          setClassId("");
-          setSubjectId("");
-          setChapterId("");
-          setTopicId("");
-          setType("");
-          setSearch("");
-          resetPage();
-        }}
+        filterChips={filterChips}
+        searchValue={search}
+        onClearFilters={clearAll}
         emptyMessage="No questions found matching your filters."
         serverMode={{
           totalRows: data?.totalRows ?? 0,
