@@ -8,6 +8,7 @@
 import type { QuestionImportRow } from './questionImportRow';
 
 export interface QuestionImportInput {
+  fileName?: string;
   /** @nullable */
   classId?: number | null;
   /** @nullable */

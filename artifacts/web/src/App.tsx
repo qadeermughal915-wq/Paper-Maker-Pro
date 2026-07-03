@@ -15,6 +15,11 @@ import SettingsPage from "@/pages/settings";
 import PackagesPage from "@/pages/packages";
 import AdminSchoolsPage from "@/pages/admin-schools";
 import AdminPackagesPage from "@/pages/admin-packages";
+import AdminUsersPage from "@/pages/admin-users";
+import PaymentsPage from "@/pages/payments";
+import ActivityPage from "@/pages/activity";
+import ImportsPage from "@/pages/imports";
+import TemplatesPage from "@/pages/templates";
 import CurriculumPage from "@/pages/curriculum";
 import QuestionBankPage from "@/pages/question-bank";
 import PapersPage from "@/pages/papers/index";
@@ -46,9 +51,14 @@ function AuthenticatedApp() {
               <Route path="/papers/new" component={NewPaperPage} />
               <Route path="/papers/:id" component={EditPaperPage} />
               <Route path="/teachers" component={TeachersPage} />
+              <Route path="/templates" component={TemplatesPage} />
+              <Route path="/imports" component={ImportsPage} />
+              <Route path="/activity" component={ActivityPage} />
+              <Route path="/payments" component={PaymentsPage} />
               <Route path="/packages" component={PackagesPage} />
               <Route path="/settings" component={SettingsPage} />
               <Route path="/admin/schools" component={AdminSchoolsPage} />
+              <Route path="/admin/users" component={AdminUsersPage} />
               <Route path="/admin/packages" component={AdminPackagesPage} />
               <Route component={NotFound} />
             </Switch>

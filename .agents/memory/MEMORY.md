@@ -1,2 +1,3 @@
 - [paperz.pk architecture](paperz-architecture.md) — pnpm monorepo exam-paper maker; OpenAPI/Orval codegen contract, api/web wiring, per-school isolation gotchas.
 - [SSRF on user URLs rendered by Puppeteer](ssrf-user-urls.md) — validate + private-range block any user URL a headless browser or server fetches (logo URLs).
+- [JSX explicit generics break babel plugin](jsx-generic-babel-plugin.md) — never `<Comp<T> ...>` in web TSX; passes tsc but 500s at runtime. Let T infer from props.

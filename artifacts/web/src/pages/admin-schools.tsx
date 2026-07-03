@@ -1,58 +1,73 @@
 import { useListAllSchools } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import type { AdminSchool } from "@workspace/api-client-react";
+import { DataGridPro, type ColDef } from "@/components/data-grid/data-grid-pro";
+import {
+  fmtDate,
+  badgeRenderer,
+  statusTone,
+} from "@/components/data-grid/cell-helpers";
 
 export default function AdminSchoolsPage() {
-  const { data: schools, isLoading } = useListAllSchools();
+  const { data: schools, isLoading, error, refetch } = useListAllSchools();
 
-  if (isLoading) {
-    return <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
-  }
+  const columnDefs: ColDef<AdminSchool>[] = [
+    { field: "name", headerName: "School Name", minWidth: 180, flex: 2 },
+    {
+      field: "packageName",
+      headerName: "Plan",
+      minWidth: 130,
+      valueFormatter: (p) => p.value ?? "No Plan",
+    },
+    {
+      field: "subscriptionStatus",
+      headerName: "Status",
+      minWidth: 120,
+      cellRenderer: badgeRenderer((v) => ({
+        label: String(v),
+        tone: statusTone(String(v)),
+      })),
+      valueFormatter: (p) => p.value ?? "—",
+    },
+    {
+      field: "teacherCount",
+      headerName: "Teachers",
+      minWidth: 110,
+      filter: "agNumberColumnFilter",
+    },
+    {
+      field: "questionCount",
+      headerName: "Questions",
+      minWidth: 110,
+      filter: "agNumberColumnFilter",
+    },
+    {
+      field: "paperCount",
+      headerName: "Papers",
+      minWidth: 100,
+      filter: "agNumberColumnFilter",
+    },
+    {
+      field: "createdAt",
+      headerName: "Joined",
+      minWidth: 130,
+      filter: "agDateColumnFilter",
+      valueFormatter: (p) => fmtDate(p.value),
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-secondary">All Schools</h1>
-        <p className="text-muted-foreground mt-1">Platform-wide school directory.</p>
-      </div>
-
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-muted text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 font-medium">School Name</th>
-                  <th className="px-4 py-3 font-medium">Plan</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Teachers</th>
-                  <th className="px-4 py-3 font-medium">Questions</th>
-                  <th className="px-4 py-3 font-medium">Papers</th>
-                  <th className="px-4 py-3 font-medium">Joined</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {schools?.map(s => (
-                  <tr key={s.id} className="hover:bg-muted/50">
-                    <td className="px-4 py-3 font-medium">{s.name}</td>
-                    <td className="px-4 py-3">{s.packageName || "No Plan"}</td>
-                    <td className="px-4 py-3 capitalize">{s.subscriptionStatus || "-"}</td>
-                    <td className="px-4 py-3">{s.teacherCount}</td>
-                    <td className="px-4 py-3">{s.questionCount}</td>
-                    <td className="px-4 py-3">{s.paperCount}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {s.createdAt ? new Date(s.createdAt).toLocaleDateString() : "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!schools?.length && (
-              <div className="p-8 text-center text-muted-foreground">No schools found.</div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <DataGridPro
+      tableKey="admin-schools"
+      title="All Schools"
+      description="Platform-wide school directory."
+      columnDefs={columnDefs}
+      rowData={schools ?? []}
+      loading={isLoading}
+      error={error ?? undefined}
+      getRowId={(r) => String(r.id)}
+      onRefresh={() => refetch()}
+      exportFileName="schools"
+      emptyMessage="No schools found."
+    />
   );
 }

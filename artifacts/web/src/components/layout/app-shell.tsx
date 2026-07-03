@@ -12,7 +12,11 @@ import {
   Settings, 
   Package,
   Building,
-  Menu
+  Menu,
+  CreditCard,
+  Activity,
+  Upload,
+  LayoutTemplate
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -27,15 +31,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (role === "super_admin") {
     links.push({ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard });
     links.push({ href: "/admin/schools", label: "Schools", icon: Building });
+    links.push({ href: "/admin/users", label: "Users", icon: Users });
     links.push({ href: "/admin/packages", label: "Packages", icon: Package });
   } else {
     links.push({ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard });
     links.push({ href: "/question-bank", label: "Question Bank", icon: Database });
     links.push({ href: "/papers", label: "Papers", icon: FileText });
+    links.push({ href: "/templates", label: "Templates", icon: LayoutTemplate });
     
     if (role === "school_admin") {
       links.push({ href: "/curriculum", label: "Curriculum", icon: BookOpen });
       links.push({ href: "/teachers", label: "Teachers", icon: Users });
+      links.push({ href: "/imports", label: "Import History", icon: Upload });
+      links.push({ href: "/activity", label: "Activity", icon: Activity });
+      links.push({ href: "/payments", label: "Payments", icon: CreditCard });
       links.push({ href: "/packages", label: "Subscription", icon: Package });
       links.push({ href: "/settings", label: "Settings", icon: Settings });
     }

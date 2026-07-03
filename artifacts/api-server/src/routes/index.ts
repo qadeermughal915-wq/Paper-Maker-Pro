@@ -9,6 +9,9 @@ import papersRouter from "./papers";
 import packagesRouter from "./packages";
 import adminRouter from "./admin";
 import statsRouter from "./stats";
+import viewsRouter from "./views";
+import billingRouter from "./billing";
+import templatesRouter from "./templates";
 
 const router: IRouter = Router();
 
@@ -22,5 +25,8 @@ router.use(papersRouter);
 router.use(packagesRouter);
 router.use(adminRouter);
 router.use(statsRouter);
+router.use(viewsRouter);
+router.use(billingRouter);
+router.use(templatesRouter);
 
 export default router;

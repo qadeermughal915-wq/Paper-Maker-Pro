@@ -77,6 +77,8 @@
   "dependencies": {
     "@clerk/react": "^6.11.3",
     "@clerk/themes": "^2.4.57",
+    "ag-grid-community": "^36.0.0",
+    "ag-grid-react": "^36.0.0",
     "xlsx": "^0.18.5"
   }
 }

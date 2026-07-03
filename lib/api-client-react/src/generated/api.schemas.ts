@@ -274,6 +274,7 @@ export interface QuestionImportRow {
 }
 
 export interface QuestionImportInput {
+  fileName?: string;
   /** @nullable */
   classId?: number | null;
   /** @nullable */
@@ -513,6 +514,145 @@ export interface TypeCount {
   count: number;
 }
 
+export type TableViewState = { [key: string]: unknown };
+
+export interface TableView {
+  id: number;
+  tableKey: string;
+  name: string;
+  state: TableViewState;
+  isDefault: boolean;
+  /** @nullable */
+  createdAt?: string | null;
+}
+
+export type TableViewInputState = { [key: string]: unknown };
+
+export interface TableViewInput {
+  /** @minLength 1 */
+  tableKey: string;
+  /** @minLength 1 */
+  name: string;
+  state: TableViewInputState;
+  isDefault?: boolean;
+}
+
+export type TableViewUpdateState = { [key: string]: unknown };
+
+export interface TableViewUpdate {
+  /** @minLength 1 */
+  name?: string;
+  state?: TableViewUpdateState;
+  isDefault?: boolean;
+}
+
+export interface QuestionPage {
+  rows: Question[];
+  totalRows: number;
+}
+
+export interface Payment {
+  id: number;
+  amount: number;
+  currency: string;
+  status: string;
+  /** @nullable */
+  method?: string | null;
+  /** @nullable */
+  reference?: string | null;
+  /** @nullable */
+  packageName?: string | null;
+  /** @nullable */
+  paidAt?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
+}
+
+export interface Activity {
+  id: number;
+  /** @nullable */
+  actorName?: string | null;
+  action: string;
+  /** @nullable */
+  entity?: string | null;
+  /** @nullable */
+  detail?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
+}
+
+export interface ImportRecord {
+  id: number;
+  /** @nullable */
+  actorName?: string | null;
+  fileName: string;
+  total: number;
+  imported: number;
+  failed: number;
+  status: string;
+  /** @nullable */
+  createdAt?: string | null;
+}
+
+export interface PaperTemplate {
+  id: number;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  classId?: number | null;
+  /** @nullable */
+  subjectId?: number | null;
+  /** @nullable */
+  className?: string | null;
+  /** @nullable */
+  subjectName?: string | null;
+  /** @nullable */
+  medium?: string | null;
+  totalMarks: number;
+  /** @nullable */
+  durationMinutes?: number | null;
+  /** @nullable */
+  createdAt?: string | null;
+}
+
+export interface PaperTemplateInput {
+  /** @minLength 1 */
+  name: string;
+  description?: string;
+  classId?: number;
+  subjectId?: number;
+  medium?: string;
+  totalMarks?: number;
+  durationMinutes?: number;
+}
+
+export interface PaperTemplateUpdate {
+  /** @minLength 1 */
+  name?: string;
+  description?: string;
+  classId?: number;
+  subjectId?: number;
+  medium?: string;
+  totalMarks?: number;
+  durationMinutes?: number;
+}
+
+export interface AdminUser {
+  id: number;
+  /** @nullable */
+  name?: string | null;
+  email: string;
+  role: Role;
+  status: string;
+  /** @nullable */
+  schoolId?: number | null;
+  /** @nullable */
+  schoolName?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
+}
+
 /**
  * Unauthorized
  */
@@ -550,4 +690,38 @@ medium?: Medium;
 difficulty?: Difficulty;
 search?: string;
 };
+
+export type ListViewsParams = {
+tableKey: string;
+};
+
+export type SearchQuestionsParams = {
+classId?: number;
+subjectId?: number;
+chapterId?: number;
+topicId?: number;
+type?: QuestionType;
+medium?: Medium;
+difficulty?: Difficulty;
+search?: string;
+/**
+ * @minimum 0
+ */
+page?: number;
+/**
+ * @minimum 1
+ * @maximum 500
+ */
+pageSize?: number;
+sortBy?: string;
+sortOrder?: SearchQuestionsSortOrder;
+};
+
+export type SearchQuestionsSortOrder = typeof SearchQuestionsSortOrder[keyof typeof SearchQuestionsSortOrder];
+
+
+export const SearchQuestionsSortOrder = {
+  asc: 'asc',
+  desc: 'desc',
+} as const;
 

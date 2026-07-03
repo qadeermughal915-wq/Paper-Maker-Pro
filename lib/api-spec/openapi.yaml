@@ -877,6 +877,282 @@ paths:
                 items:
                   $ref: "#/components/schemas/PaperSummary"
 
+  /views:
+    get:
+      operationId: listViews
+      tags: [views]
+      summary: List saved table views for the current user
+      parameters:
+        - name: tableKey
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Views
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TableView"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createView
+      tags: [views]
+      summary: Save a table view
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TableViewInput"
+      responses:
+        "201":
+          description: Created view
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TableView"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /views/{id}:
+    patch:
+      operationId: updateView
+      tags: [views]
+      summary: Update a saved view
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TableViewUpdate"
+      responses:
+        "200":
+          description: Updated view
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TableView"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteView
+      tags: [views]
+      summary: Delete a saved view
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /questions/search:
+    get:
+      operationId: searchQuestions
+      tags: [questions]
+      summary: Paginated, sorted, filtered question search for server-side grids
+      parameters:
+        - name: classId
+          in: query
+          schema:
+            type: integer
+        - name: subjectId
+          in: query
+          schema:
+            type: integer
+        - name: chapterId
+          in: query
+          schema:
+            type: integer
+        - name: topicId
+          in: query
+          schema:
+            type: integer
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/QuestionType"
+        - name: medium
+          in: query
+          schema:
+            $ref: "#/components/schemas/Medium"
+        - name: difficulty
+          in: query
+          schema:
+            $ref: "#/components/schemas/Difficulty"
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        "200":
+          description: Paged questions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionPage"
+
+  /payments:
+    get:
+      operationId: listPayments
+      tags: [billing]
+      summary: List payments for the current school
+      responses:
+        "200":
+          description: Payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Payment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /activity:
+    get:
+      operationId: listActivity
+      tags: [activity]
+      summary: List recent activity for the current school
+      responses:
+        "200":
+          description: Activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Activity"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /imports:
+    get:
+      operationId: listImports
+      tags: [activity]
+      summary: List import history for the current school
+      responses:
+        "200":
+          description: Import history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ImportRecord"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /templates:
+    get:
+      operationId: listTemplates
+      tags: [templates]
+      summary: List paper templates for the current school
+      responses:
+        "200":
+          description: Templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaperTemplate"
+    post:
+      operationId: createTemplate
+      tags: [templates]
+      summary: Create a paper template
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaperTemplateInput"
+      responses:
+        "201":
+          description: Created template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaperTemplate"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+  /templates/{id}:
+    patch:
+      operationId: updateTemplate
+      tags: [templates]
+      summary: Update a paper template
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaperTemplateUpdate"
+      responses:
+        "200":
+          description: Updated template
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaperTemplate"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: deleteTemplate
+      tags: [templates]
+      summary: Delete a paper template
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/users:
+    get:
+      operationId: listAllUsers
+      tags: [admin]
+      summary: List all platform users (super admin)
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
 components:
   parameters:
     IdParam:
@@ -1243,6 +1519,8 @@ components:
       type: object
       required: [rows]
       properties:
+        fileName:
+          type: string
         classId:
           type: ["integer", "null"]
         subjectId:
@@ -1647,3 +1925,204 @@ components:
           type: string
         count:
           type: integer
+
+    TableView:
+      type: object
+      required: [id, tableKey, name, state, isDefault]
+      properties:
+        id:
+          type: integer
+        tableKey:
+          type: string
+        name:
+          type: string
+        state:
+          type: object
+          additionalProperties: true
+        isDefault:
+          type: boolean
+        createdAt:
+          type: ["string", "null"]
+    TableViewInput:
+      type: object
+      required: [tableKey, name, state]
+      properties:
+        tableKey:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        state:
+          type: object
+          additionalProperties: true
+        isDefault:
+          type: boolean
+    TableViewUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        state:
+          type: object
+          additionalProperties: true
+        isDefault:
+          type: boolean
+
+    QuestionPage:
+      type: object
+      required: [rows, totalRows]
+      properties:
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/Question"
+        totalRows:
+          type: integer
+
+    Payment:
+      type: object
+      required: [id, amount, currency, status]
+      properties:
+        id:
+          type: integer
+        amount:
+          type: integer
+        currency:
+          type: string
+        status:
+          type: string
+        method:
+          type: ["string", "null"]
+        reference:
+          type: ["string", "null"]
+        packageName:
+          type: ["string", "null"]
+        paidAt:
+          type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]
+
+    Activity:
+      type: object
+      required: [id, action]
+      properties:
+        id:
+          type: integer
+        actorName:
+          type: ["string", "null"]
+        action:
+          type: string
+        entity:
+          type: ["string", "null"]
+        detail:
+          type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]
+
+    ImportRecord:
+      type: object
+      required: [id, fileName, total, imported, failed, status]
+      properties:
+        id:
+          type: integer
+        actorName:
+          type: ["string", "null"]
+        fileName:
+          type: string
+        total:
+          type: integer
+        imported:
+          type: integer
+        failed:
+          type: integer
+        status:
+          type: string
+        createdAt:
+          type: ["string", "null"]
+
+    PaperTemplate:
+      type: object
+      required: [id, name, totalMarks]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        classId:
+          type: ["integer", "null"]
+        subjectId:
+          type: ["integer", "null"]
+        className:
+          type: ["string", "null"]
+        subjectName:
+          type: ["string", "null"]
+        medium:
+          type: ["string", "null"]
+        totalMarks:
+          type: integer
+        durationMinutes:
+          type: ["integer", "null"]
+        createdAt:
+          type: ["string", "null"]
+    PaperTemplateInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        classId:
+          type: integer
+        subjectId:
+          type: integer
+        medium:
+          type: string
+        totalMarks:
+          type: integer
+        durationMinutes:
+          type: integer
+    PaperTemplateUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        classId:
+          type: integer
+        subjectId:
+          type: integer
+        medium:
+          type: string
+        totalMarks:
+          type: integer
+        durationMinutes:
+          type: integer
+
+    AdminUser:
+      type: object
+      required: [id, email, role, status]
+      properties:
+        id:
+          type: integer
+        name:
+          type: ["string", "null"]
+        email:
+          type: string
+        role:
+          $ref: "#/components/schemas/Role"
+        status:
+          type: string
+        schoolId:
+          type: ["integer", "null"]
+        schoolName:
+          type: ["string", "null"]
+        createdAt:
+          type: ["string", "null"]

@@ -6,8 +6,13 @@ import {
   chapters,
   topics,
   questions,
+  schools,
+  payments,
+  activityLogs,
+  importHistory,
+  paperTemplates,
 } from "@workspace/db";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export async function seedPlatformPackages(): Promise<void> {
   const [{ count }] = await db
@@ -127,4 +132,122 @@ export async function seedStarterCurriculum(schoolId: number): Promise<void> {
       text: "Explain the International System of Units (SI) with its base units.",
     },
   ]);
+}
+
+const DEMO_METHODS = ["card", "bank_transfer", "easypaisa", "jazzcash"] as const;
+
+export async function seedDemoData(schoolId: number): Promise<void> {
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(payments)
+    .where(eq(payments.schoolId, schoolId));
+  if (count > 0) return;
+
+  const now = Date.now();
+  const day = 24 * 60 * 60 * 1000;
+
+  await db.insert(payments).values(
+    [
+      { amount: 2500, status: "paid", packageName: "Standard", offset: 3 },
+      { amount: 2500, status: "paid", packageName: "Standard", offset: 33 },
+      { amount: 2500, status: "paid", packageName: "Standard", offset: 63 },
+      { amount: 6000, status: "pending", packageName: "Premium", offset: 1 },
+      { amount: 2500, status: "failed", packageName: "Standard", offset: 90 },
+    ].map((p, i) => ({
+      schoolId,
+      amount: p.amount,
+      currency: "PKR",
+      status: p.status,
+      method: DEMO_METHODS[i % DEMO_METHODS.length],
+      reference: `TXN-${(now - p.offset * day).toString(36).toUpperCase()}`,
+      packageName: p.packageName,
+      paidAt: new Date(now - p.offset * day),
+    })),
+  );
+
+  await db.insert(activityLogs).values(
+    [
+      { action: "created_paper", entity: "paper", detail: "Physics Mid-Term created", offset: 0 },
+      { action: "added_question", entity: "question", detail: "3 questions added to Chemistry", offset: 1 },
+      { action: "invited_teacher", entity: "teacher", detail: "Invited teacher ali@example.com", offset: 2 },
+      { action: "imported_questions", entity: "question", detail: "Imported 42 questions", offset: 4 },
+      { action: "updated_subscription", entity: "subscription", detail: "Renewed Standard plan", offset: 5 },
+      { action: "exported_pdf", entity: "paper", detail: "Exported Class 9 Physics paper", offset: 6 },
+    ].map((a) => ({
+      schoolId,
+      actorName: "Demo Admin",
+      action: a.action,
+      entity: a.entity,
+      detail: a.detail,
+      createdAt: new Date(now - a.offset * day),
+    })),
+  );
+
+  await db.insert(importHistory).values(
+    [
+      { fileName: "physics_bank.csv", total: 45, imported: 42, failed: 3, status: "completed_with_errors", offset: 4 },
+      { fileName: "chemistry_mcqs.xlsx", total: 30, imported: 30, failed: 0, status: "completed", offset: 10 },
+      { fileName: "math_questions.csv", total: 60, imported: 58, failed: 2, status: "completed_with_errors", offset: 20 },
+    ].map((h) => ({
+      schoolId,
+      actorName: "Demo Admin",
+      fileName: h.fileName,
+      total: h.total,
+      imported: h.imported,
+      failed: h.failed,
+      status: h.status,
+      createdAt: new Date(now - h.offset * day),
+    })),
+  );
+
+  const [cls] = await db
+    .select({ id: classes.id })
+    .from(classes)
+    .where(eq(classes.schoolId, schoolId))
+    .limit(1);
+  const [subj] = await db
+    .select({ id: subjects.id })
+    .from(subjects)
+    .where(eq(subjects.schoolId, schoolId))
+    .limit(1);
+
+  await db.insert(paperTemplates).values([
+    {
+      schoolId,
+      name: "Mid-Term Exam (35 marks)",
+      description: "Standard mid-term layout: MCQs, short and long questions.",
+      classId: cls?.id ?? null,
+      subjectId: subj?.id ?? null,
+      medium: "english",
+      totalMarks: 35,
+      durationMinutes: 90,
+    },
+    {
+      schoolId,
+      name: "Final Term Exam (75 marks)",
+      description: "Comprehensive final term paper template.",
+      classId: cls?.id ?? null,
+      subjectId: subj?.id ?? null,
+      medium: "english",
+      totalMarks: 75,
+      durationMinutes: 180,
+    },
+    {
+      schoolId,
+      name: "Monthly Test (20 marks)",
+      description: "Quick monthly assessment.",
+      classId: cls?.id ?? null,
+      subjectId: subj?.id ?? null,
+      medium: "dual",
+      totalMarks: 20,
+      durationMinutes: 45,
+    },
+  ]);
+}
+
+export async function backfillDemoData(): Promise<void> {
+  const allSchools = await db.select({ id: schools.id }).from(schools);
+  for (const s of allSchools) {
+    await seedDemoData(s.id);
+  }
 }

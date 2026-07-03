@@ -8,8 +8,11 @@ import {
   subscriptions,
   packages,
 } from "@workspace/db";
-import { and, eq, sql } from "drizzle-orm";
-import { ListAllSchoolsResponse } from "@workspace/api-zod";
+import { and, eq, sql, desc } from "drizzle-orm";
+import {
+  ListAllSchoolsResponse,
+  ListAllUsersResponse,
+} from "@workspace/api-zod";
 import { asyncHandler } from "../lib/http";
 import { attachUser, requireRole, type AuthedRequest } from "../lib/auth";
 
@@ -67,6 +70,43 @@ router.get(
     );
 
     res.json(ListAllSchoolsResponse.parse(result));
+  }),
+);
+
+router.get(
+  "/admin/users",
+  attachUser,
+  requireRole("super_admin"),
+  asyncHandler(async (_req: AuthedRequest, res: Response) => {
+    const rows = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        status: users.status,
+        schoolId: users.schoolId,
+        schoolName: schools.name,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .leftJoin(schools, eq(users.schoolId, schools.id))
+      .orderBy(desc(users.createdAt));
+
+    res.json(
+      ListAllUsersResponse.parse(
+        rows.map((u) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          status: u.status,
+          schoolId: u.schoolId,
+          schoolName: u.schoolName,
+          createdAt: u.createdAt?.toISOString() ?? null,
+        })),
+      ),
+    );
   }),
 );
 

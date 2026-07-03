@@ -519,6 +519,7 @@ export const CreateQuestionResponse = zod.object({
  * @summary Bulk import questions from parsed CSV/Excel rows
  */
 export const ImportQuestionsBody = zod.object({
+  "fileName": zod.string().optional(),
   "classId": zod.number().nullish(),
   "subjectId": zod.number().nullish(),
   "chapterId": zod.number().nullish(),
@@ -1044,5 +1045,288 @@ export const GetRecentPapersResponseItem = zod.object({
   "createdAt": zod.string().nullish()
 })
 export const GetRecentPapersResponse = zod.array(GetRecentPapersResponseItem)
+
+
+/**
+ * @summary List saved table views for the current user
+ */
+export const ListViewsQueryParams = zod.object({
+  "tableKey": zod.coerce.string()
+})
+
+export const ListViewsResponseItem = zod.object({
+  "id": zod.number(),
+  "tableKey": zod.string(),
+  "name": zod.string(),
+  "state": zod.record(zod.string(), zod.unknown()),
+  "isDefault": zod.boolean(),
+  "createdAt": zod.string().nullish()
+})
+export const ListViewsResponse = zod.array(ListViewsResponseItem)
+
+
+/**
+ * @summary Save a table view
+ */
+
+
+
+
+export const CreateViewBody = zod.object({
+  "tableKey": zod.string().min(1),
+  "name": zod.string().min(1),
+  "state": zod.record(zod.string(), zod.unknown()),
+  "isDefault": zod.boolean().optional()
+})
+
+export const CreateViewResponse = zod.object({
+  "id": zod.number(),
+  "tableKey": zod.string(),
+  "name": zod.string(),
+  "state": zod.record(zod.string(), zod.unknown()),
+  "isDefault": zod.boolean(),
+  "createdAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Update a saved view
+ */
+export const UpdateViewParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const UpdateViewBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "state": zod.record(zod.string(), zod.unknown()).optional(),
+  "isDefault": zod.boolean().optional()
+})
+
+export const UpdateViewResponse = zod.object({
+  "id": zod.number(),
+  "tableKey": zod.string(),
+  "name": zod.string(),
+  "state": zod.record(zod.string(), zod.unknown()),
+  "isDefault": zod.boolean(),
+  "createdAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Delete a saved view
+ */
+export const DeleteViewParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteViewResponse = zod.void()
+
+
+/**
+ * @summary Paginated, sorted, filtered question search for server-side grids
+ */
+export const searchQuestionsQueryPageMin = 0;
+
+export const searchQuestionsQueryPageSizeMax = 500;
+
+
+
+export const SearchQuestionsQueryParams = zod.object({
+  "classId": zod.coerce.number().optional(),
+  "subjectId": zod.coerce.number().optional(),
+  "chapterId": zod.coerce.number().optional(),
+  "topicId": zod.coerce.number().optional(),
+  "type": zod.enum(['mcq', 'short', 'long', 'exercise', 'conceptual', 'past_paper']).optional(),
+  "medium": zod.enum(['urdu', 'english', 'dual']).optional(),
+  "difficulty": zod.enum(['easy', 'medium', 'hard']).optional(),
+  "search": zod.coerce.string().optional(),
+  "page": zod.coerce.number().min(searchQuestionsQueryPageMin).optional(),
+  "pageSize": zod.coerce.number().min(1).max(searchQuestionsQueryPageSizeMax).optional(),
+  "sortBy": zod.coerce.string().optional(),
+  "sortOrder": zod.enum(['asc', 'desc']).optional()
+})
+
+export const SearchQuestionsResponse = zod.object({
+  "rows": zod.array(zod.object({
+  "id": zod.number(),
+  "classId": zod.number(),
+  "subjectId": zod.number(),
+  "chapterId": zod.number().nullish(),
+  "topicId": zod.number().nullish(),
+  "type": zod.enum(['mcq', 'short', 'long', 'exercise', 'conceptual', 'past_paper']),
+  "medium": zod.enum(['urdu', 'english', 'dual']),
+  "difficulty": zod.enum(['easy', 'medium', 'hard']),
+  "marks": zod.number(),
+  "text": zod.string(),
+  "options": zod.array(zod.string()).nullish(),
+  "answer": zod.string().nullish(),
+  "className": zod.string().nullish(),
+  "subjectName": zod.string().nullish(),
+  "chapterName": zod.string().nullish(),
+  "createdAt": zod.string().nullish()
+})),
+  "totalRows": zod.number()
+})
+
+
+/**
+ * @summary List payments for the current school
+ */
+export const ListPaymentsResponseItem = zod.object({
+  "id": zod.number(),
+  "amount": zod.number(),
+  "currency": zod.string(),
+  "status": zod.string(),
+  "method": zod.string().nullish(),
+  "reference": zod.string().nullish(),
+  "packageName": zod.string().nullish(),
+  "paidAt": zod.string().nullish(),
+  "createdAt": zod.string().nullish()
+})
+export const ListPaymentsResponse = zod.array(ListPaymentsResponseItem)
+
+
+/**
+ * @summary List recent activity for the current school
+ */
+export const ListActivityResponseItem = zod.object({
+  "id": zod.number(),
+  "actorName": zod.string().nullish(),
+  "action": zod.string(),
+  "entity": zod.string().nullish(),
+  "detail": zod.string().nullish(),
+  "createdAt": zod.string().nullish()
+})
+export const ListActivityResponse = zod.array(ListActivityResponseItem)
+
+
+/**
+ * @summary List import history for the current school
+ */
+export const ListImportsResponseItem = zod.object({
+  "id": zod.number(),
+  "actorName": zod.string().nullish(),
+  "fileName": zod.string(),
+  "total": zod.number(),
+  "imported": zod.number(),
+  "failed": zod.number(),
+  "status": zod.string(),
+  "createdAt": zod.string().nullish()
+})
+export const ListImportsResponse = zod.array(ListImportsResponseItem)
+
+
+/**
+ * @summary List paper templates for the current school
+ */
+export const ListTemplatesResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "classId": zod.number().nullish(),
+  "subjectId": zod.number().nullish(),
+  "className": zod.string().nullish(),
+  "subjectName": zod.string().nullish(),
+  "medium": zod.string().nullish(),
+  "totalMarks": zod.number(),
+  "durationMinutes": zod.number().nullish(),
+  "createdAt": zod.string().nullish()
+})
+export const ListTemplatesResponse = zod.array(ListTemplatesResponseItem)
+
+
+/**
+ * @summary Create a paper template
+ */
+
+
+
+export const CreateTemplateBody = zod.object({
+  "name": zod.string().min(1),
+  "description": zod.string().optional(),
+  "classId": zod.number().optional(),
+  "subjectId": zod.number().optional(),
+  "medium": zod.string().optional(),
+  "totalMarks": zod.number().optional(),
+  "durationMinutes": zod.number().optional()
+})
+
+export const CreateTemplateResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "classId": zod.number().nullish(),
+  "subjectId": zod.number().nullish(),
+  "className": zod.string().nullish(),
+  "subjectName": zod.string().nullish(),
+  "medium": zod.string().nullish(),
+  "totalMarks": zod.number(),
+  "durationMinutes": zod.number().nullish(),
+  "createdAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Update a paper template
+ */
+export const UpdateTemplateParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+
+
+
+export const UpdateTemplateBody = zod.object({
+  "name": zod.string().min(1).optional(),
+  "description": zod.string().optional(),
+  "classId": zod.number().optional(),
+  "subjectId": zod.number().optional(),
+  "medium": zod.string().optional(),
+  "totalMarks": zod.number().optional(),
+  "durationMinutes": zod.number().optional()
+})
+
+export const UpdateTemplateResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "classId": zod.number().nullish(),
+  "subjectId": zod.number().nullish(),
+  "className": zod.string().nullish(),
+  "subjectName": zod.string().nullish(),
+  "medium": zod.string().nullish(),
+  "totalMarks": zod.number(),
+  "durationMinutes": zod.number().nullish(),
+  "createdAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Delete a paper template
+ */
+export const DeleteTemplateParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteTemplateResponse = zod.void()
+
+
+/**
+ * @summary List all platform users (super admin)
+ */
+export const ListAllUsersResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string().nullish(),
+  "email": zod.string(),
+  "role": zod.enum(['super_admin', 'school_admin', 'teacher']),
+  "status": zod.string(),
+  "schoolId": zod.number().nullish(),
+  "schoolName": zod.string().nullish(),
+  "createdAt": zod.string().nullish()
+})
+export const ListAllUsersResponse = zod.array(ListAllUsersResponseItem)
 
 

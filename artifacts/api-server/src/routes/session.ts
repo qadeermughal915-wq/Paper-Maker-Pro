@@ -14,7 +14,7 @@ import {
   resolveLocalUser,
   type AuthedRequest,
 } from "../lib/auth";
-import { seedStarterCurriculum } from "../lib/seed";
+import { seedStarterCurriculum, seedDemoData } from "../lib/seed";
 
 const router: IRouter = Router();
 
@@ -178,6 +178,7 @@ router.post(
     }
 
     await seedStarterCurriculum(school.id);
+    await seedDemoData(school.id);
 
     const me = await buildMe(userId, {
       email: identity.email,

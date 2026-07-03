@@ -5,3 +5,7 @@ export * from "./subscriptions";
 export * from "./taxonomy";
 export * from "./questions";
 export * from "./papers";
+export * from "./views";
+export * from "./billing";
+export * from "./activity";
+export * from "./templates";

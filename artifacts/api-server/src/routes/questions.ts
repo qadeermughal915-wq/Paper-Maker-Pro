@@ -1,10 +1,29 @@
 import { Router, type IRouter, type Response } from "express";
 import { db } from "@workspace/db";
-import { questions, classes, subjects, chapters, topics } from "@workspace/db";
-import { and, eq, desc, ilike, type SQL } from "drizzle-orm";
+import {
+  questions,
+  classes,
+  subjects,
+  chapters,
+  topics,
+  importHistory,
+  activityLogs,
+} from "@workspace/db";
+import {
+  and,
+  eq,
+  desc,
+  asc,
+  ilike,
+  sql,
+  type SQL,
+  type SQLWrapper,
+} from "drizzle-orm";
 import {
   ListQuestionsQueryParams,
   ListQuestionsResponse,
+  SearchQuestionsQueryParams,
+  SearchQuestionsResponse,
   CreateQuestionBody,
   CreateQuestionResponse,
   ImportQuestionsBody,
@@ -426,11 +445,101 @@ router.post(
       }
     }
 
+    await db.insert(importHistory).values({
+      schoolId,
+      userId: req.localUser!.id,
+      actorName: req.localUser!.name ?? req.clerkEmail ?? null,
+      fileName: body.fileName ?? "questions.csv",
+      total: body.rows.length,
+      imported,
+      failed: errors.length,
+      status: errors.length === 0 ? "completed" : "completed_with_errors",
+    });
+    if (imported > 0) {
+      await db.insert(activityLogs).values({
+        schoolId,
+        userId: req.localUser!.id,
+        actorName: req.localUser!.name ?? req.clerkEmail ?? null,
+        action: "imported_questions",
+        entity: "question",
+        detail: `Imported ${imported} question(s)`,
+      });
+    }
+
     res.json(
       ImportQuestionsResponse.parse({
         imported,
         failed: errors.length,
         errors,
+      }),
+    );
+  }),
+);
+
+router.get(
+  "/questions/search",
+  asyncHandler(async (req: AuthedRequest, res: Response) => {
+    const schoolId = req.localUser!.schoolId!;
+    const query = SearchQuestionsQueryParams.parse(req.query);
+    const conditions: SQL[] = [eq(questions.schoolId, schoolId)];
+    if (query.classId) conditions.push(eq(questions.classId, query.classId));
+    if (query.subjectId)
+      conditions.push(eq(questions.subjectId, query.subjectId));
+    if (query.chapterId)
+      conditions.push(eq(questions.chapterId, query.chapterId));
+    if (query.topicId) conditions.push(eq(questions.topicId, query.topicId));
+    if (query.type) conditions.push(eq(questions.type, query.type));
+    if (query.medium) conditions.push(eq(questions.medium, query.medium));
+    if (query.difficulty)
+      conditions.push(eq(questions.difficulty, query.difficulty));
+    if (query.search)
+      conditions.push(ilike(questions.text, `%${query.search}%`));
+
+    const whereClause = and(...conditions);
+
+    const sortColumns: Record<string, SQLWrapper> = {
+      text: questions.text,
+      marks: questions.marks,
+      type: questions.type,
+      medium: questions.medium,
+      difficulty: questions.difficulty,
+      createdAt: questions.createdAt,
+      className: classes.name,
+      subjectName: subjects.name,
+      chapterName: chapters.name,
+    };
+    const sortCol = sortColumns[query.sortBy ?? "createdAt"] ?? questions.createdAt;
+    const orderBy = query.sortOrder === "asc" ? asc(sortCol) : desc(sortCol);
+
+    const page = query.page ?? 0;
+    const pageSize = query.pageSize ?? 50;
+
+    const [rows, [{ total }]] = await Promise.all([
+      db
+        .select({
+          question: questions,
+          className: classes.name,
+          subjectName: subjects.name,
+          chapterName: chapters.name,
+        })
+        .from(questions)
+        .leftJoin(classes, eq(questions.classId, classes.id))
+        .leftJoin(subjects, eq(questions.subjectId, subjects.id))
+        .leftJoin(chapters, eq(questions.chapterId, chapters.id))
+        .where(whereClause)
+        .orderBy(orderBy)
+        .limit(pageSize)
+        .offset(page * pageSize),
+      db
+        .select({ total: sql<number>`count(*)::int` })
+        .from(questions)
+        .where(whereClause),
+    ]);
+
+    res.json(
+      SearchQuestionsResponse.parse({
+        rows: rows.map(serialize),
+        totalRows: total,
       }),
     );
   }),
