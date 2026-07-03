@@ -1,24 +1,61 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
-import { useGetPaper, useUpdatePaper, getGetPaperQueryKey } from "@workspace/api-client-react";
+import {
+  useGetPaper,
+  useUpdatePaper,
+  useListQuestions,
+  getGetPaperQueryKey,
+  getListQuestionsQueryKey,
+} from "@workspace/api-client-react";
+import type { Question } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2, FileDown, Save, ArrowLeft, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Loader2, FileDown, Save, ArrowLeft, ArrowUp, ArrowDown, Trash2, Plus, Repeat, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+type QType = "mcq" | "short" | "long" | "exercise" | "conceptual" | "past_paper";
+
+const TYPE_SECTIONS: Record<QType, string> = {
+  mcq: "Multiple Choice Questions",
+  short: "Short Questions",
+  long: "Long Questions",
+  exercise: "Exercises",
+  conceptual: "Conceptual Questions",
+  past_paper: "Past Paper Questions",
+};
 
 type EditableQuestion = {
   id?: number | null;
   questionId?: number | null;
   order: number;
   section: string;
-  type: "mcq" | "short" | "long" | "exercise" | "conceptual" | "past_paper";
+  type: QType;
   marks: number;
   text: string;
   options?: string[] | null;
 };
+
+function questionToItem(q: Question): EditableQuestion {
+  return {
+    questionId: q.id,
+    order: 0,
+    section: TYPE_SECTIONS[q.type as QType] ?? "Questions",
+    type: q.type as QType,
+    marks: q.marks,
+    text: q.text,
+    options: q.options,
+  };
+}
 
 export default function EditPaperPage() {
   const { id } = useParams();
@@ -37,6 +74,10 @@ export default function EditPaperPage() {
   const [logoUrl, setLogoUrl] = useState("");
   const [items, setItems] = useState<EditableQuestion[]>([]);
 
+  // picker state: null=closed, "add"=append mode, number=swap index
+  const [pickerMode, setPickerMode] = useState<null | "add" | number>(null);
+  const [pickerSearch, setPickerSearch] = useState("");
+
   useEffect(() => {
     if (paper) {
       setTitle(paper.title);
@@ -50,7 +91,7 @@ export default function EditPaperPage() {
           questionId: q.questionId,
           order: q.order,
           section: q.section,
-          type: q.type,
+          type: q.type as QType,
           marks: q.marks,
           text: q.text,
           options: q.options,
@@ -69,12 +110,20 @@ export default function EditPaperPage() {
     setItems(next);
   };
 
-  const remove = (index: number) => {
-    setItems(items.filter((_, i) => i !== index));
-  };
+  const remove = (index: number) => setItems(items.filter((_, i) => i !== index));
 
-  const updateItem = (index: number, patch: Partial<EditableQuestion>) => {
+  const updateItem = (index: number, patch: Partial<EditableQuestion>) =>
     setItems(items.map((q, i) => (i === index ? { ...q, ...patch } : q)));
+
+  const handlePick = (q: Question) => {
+    const picked = questionToItem(q);
+    if (pickerMode === "add") {
+      setItems([...items, picked]);
+    } else if (typeof pickerMode === "number") {
+      setItems(items.map((it, i) => (i === pickerMode ? { ...picked } : it)));
+    }
+    setPickerMode(null);
+    setPickerSearch("");
   };
 
   const handleSave = () => {
@@ -154,7 +203,7 @@ export default function EditPaperPage() {
         </div>
         <div className="space-y-2">
           <Label>Logo URL (header)</Label>
-          <Input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..." />
+          <Input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://... (blank = paperz branding)" />
         </div>
         <div className="space-y-2 md:col-span-2">
           <Label>Instructions</Label>
@@ -165,10 +214,15 @@ export default function EditPaperPage() {
       <div className="space-y-4 mt-8">
         <div className="flex items-center justify-between border-b pb-2">
           <h2 className="text-xl font-bold text-secondary">Questions ({items.length})</h2>
-          <span className="text-sm text-muted-foreground">Total: {totalMarks} Marks</span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground">Total: {totalMarks} Marks</span>
+            <Button size="sm" onClick={() => { setPickerSearch(""); setPickerMode("add"); }}>
+              <Plus className="h-4 w-4 mr-1"/> Add from Bank
+            </Button>
+          </div>
         </div>
         {items.length === 0 && (
-          <p className="text-muted-foreground text-sm py-8 text-center">No questions. Removed questions will be dropped when you save.</p>
+          <p className="text-muted-foreground text-sm py-8 text-center">No questions yet. Use "Add from Bank" to include questions.</p>
         )}
         {items.map((q, i) => (
           <div key={q.id ?? `${i}-${q.text.slice(0, 8)}`} className="bg-card border rounded-lg p-5 space-y-3">
@@ -199,12 +253,85 @@ export default function EditPaperPage() {
                   <Input type="number" value={q.marks} onChange={e => updateItem(i, { marks: Number(e.target.value) })} className="w-16 h-8 text-center" />
                   <span className="text-sm text-muted-foreground">Marks</span>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => remove(i)}><Trash2 className="h-4 w-4"/></Button>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" title="Swap with another question" onClick={() => { setPickerSearch(""); setPickerMode(i); }}><Repeat className="h-4 w-4"/></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="Remove" onClick={() => remove(i)}><Trash2 className="h-4 w-4"/></Button>
+                </div>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      <QuestionPicker
+        open={pickerMode !== null}
+        mode={pickerMode}
+        classId={paper.classId}
+        subjectId={paper.subjectId}
+        search={pickerSearch}
+        onSearchChange={setPickerSearch}
+        usedIds={items.map((it) => it.questionId).filter((v): v is number => typeof v === "number")}
+        onPick={handlePick}
+        onClose={() => { setPickerMode(null); setPickerSearch(""); }}
+      />
     </div>
+  );
+}
+
+function QuestionPicker(props: {
+  open: boolean;
+  mode: null | "add" | number;
+  classId: number;
+  subjectId: number;
+  search: string;
+  onSearchChange: (v: string) => void;
+  usedIds: number[];
+  onPick: (q: Question) => void;
+  onClose: () => void;
+}) {
+  const { open, mode, classId, subjectId, search, onSearchChange, usedIds, onPick, onClose } = props;
+  const params = { classId, subjectId, search: search || undefined };
+  const { data: questions, isLoading } = useListQuestions(
+    params,
+    { query: { enabled: open, queryKey: getListQuestionsQueryKey(params) } },
+  );
+
+  const isSwap = typeof mode === "number";
+  const available = (questions || []).filter((q) => isSwap || !usedIds.includes(q.id));
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>{isSwap ? "Swap Question" : "Add Questions from Bank"}</DialogTitle>
+          <DialogDescription>
+            {isSwap ? "Pick a question to replace the selected one." : "Pick questions to append to this paper."}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-9" placeholder="Search questions..." value={search} onChange={e => onSearchChange(e.target.value)} />
+        </div>
+        <div className="overflow-y-auto flex-1 space-y-2 mt-2 pr-1">
+          {isLoading && <div className="py-8 flex justify-center"><Loader2 className="animate-spin text-primary"/></div>}
+          {!isLoading && available.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-8">No matching questions in this class/subject.</p>
+          )}
+          {available.map((q) => (
+            <button
+              key={q.id}
+              onClick={() => onPick(q)}
+              className="w-full text-left bg-card border rounded-lg p-3 hover:border-primary transition-colors"
+            >
+              <div className="flex justify-between gap-3">
+                <p className="text-sm text-foreground line-clamp-2">{q.text}</p>
+                <span className="shrink-0 text-xs bg-muted px-2 py-0.5 rounded h-fit">{q.marks} Marks</span>
+              </div>
+              <div className="text-xs text-muted-foreground uppercase mt-1">{TYPE_SECTIONS[q.type as QType] ?? q.type}</div>
+            </button>
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

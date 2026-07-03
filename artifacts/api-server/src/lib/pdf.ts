@@ -1,7 +1,37 @@
 import puppeteer from "puppeteer";
 import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 
 let cachedExecutablePath: string | null | undefined;
+
+const DEFAULT_LOGO_FILE = "image_1783062400058.png";
+let cachedDefaultLogo: string | null | undefined;
+
+function getDefaultLogoDataUri(): string | null {
+  if (cachedDefaultLogo !== undefined) return cachedDefaultLogo;
+  const candidates = [
+    path.resolve(process.cwd(), "attached_assets", DEFAULT_LOGO_FILE),
+    path.resolve(process.cwd(), "..", "..", "attached_assets", DEFAULT_LOGO_FILE),
+    path.resolve(process.cwd(), "..", "attached_assets", DEFAULT_LOGO_FILE),
+  ];
+  for (const p of candidates) {
+    try {
+      const buf = readFileSync(p);
+      cachedDefaultLogo = `data:image/png;base64,${buf.toString("base64")}`;
+      return cachedDefaultLogo;
+    } catch {
+      // try next candidate
+    }
+  }
+  cachedDefaultLogo = null;
+  return null;
+}
+
+function resolveLogoSrc(logoUrl?: string | null): string | null {
+  if (logoUrl && /^(https?:|data:)/i.test(logoUrl.trim())) return logoUrl.trim();
+  return getDefaultLogoDataUri();
+}
 
 function resolveChromiumPath(): string | undefined {
   if (process.env.PUPPETEER_EXECUTABLE_PATH)
@@ -38,6 +68,7 @@ export interface PdfPaper {
   examDate?: string | null;
   instructions?: string | null;
   schoolName?: string | null;
+  logoUrl?: string | null;
   questions: PdfPaperQuestion[];
 }
 
@@ -61,6 +92,7 @@ function escapeHtml(value: string): string {
 function buildHtml(paper: PdfPaper): string {
   const isRtl = paper.medium === "urdu" || paper.medium === "dual";
   const dir = isRtl ? "rtl" : "ltr";
+  const logoSrc = resolveLogoSrc(paper.logoUrl);
   const fontFamily = isRtl
     ? "'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', serif"
     : "'Georgia', 'Times New Roman', serif";
@@ -140,6 +172,13 @@ function buildHtml(paper: PdfPaper): string {
     padding-bottom: 12px;
     margin-bottom: 16px;
   }
+  .logo {
+    height: 64px;
+    width: auto;
+    max-width: 180px;
+    object-fit: contain;
+    margin-bottom: 8px;
+  }
   .school-name {
     font-size: 24px;
     font-weight: 700;
@@ -193,6 +232,7 @@ function buildHtml(paper: PdfPaper): string {
 </head>
 <body>
   <div class="header">
+    ${logoSrc ? `<img class="logo" src="${escapeHtml(logoSrc)}" alt="logo" />` : ""}
     <div class="school-name">${escapeHtml(paper.schoolName || "School")}</div>
     <div class="paper-title">${escapeHtml(paper.title)}</div>
   </div>

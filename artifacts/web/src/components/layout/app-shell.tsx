@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useGetMe } from "@workspace/api-client-react";
 import { UserButton } from "@clerk/react";
+import logoIcon from "@assets/image_1783062400058.png";
 import type { LucideIcon } from "lucide-react";
 import { 
   LayoutDashboard, 
@@ -67,7 +68,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex w-64 flex-col fixed inset-y-0 left-0 bg-sidebar border-r border-sidebar-border shadow-sm">
         <div className="h-16 flex items-center px-6 border-b border-sidebar-border/50">
-          <img src="/logo.svg" alt="Paperz.pk" className="h-8 w-8 mr-3" />
+          <img src={logoIcon} alt="Paperz.pk" className="h-8 w-8 mr-3" />
           <span className="text-xl font-bold text-sidebar-foreground">paperz.pk</span>
         </div>
         <div className="flex-1 px-4 py-4 overflow-y-auto">
@@ -93,7 +94,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </SheetTrigger>
             <SheetContent side="left" className="w-64 bg-sidebar p-0 border-none">
               <div className="h-16 flex items-center px-6 border-b border-sidebar-border/50">
-                <img src="/logo.svg" alt="Paperz.pk" className="h-8 w-8 mr-3" />
+                <img src={logoIcon} alt="Paperz.pk" className="h-8 w-8 mr-3" />
                 <span className="text-xl font-bold text-sidebar-foreground">paperz.pk</span>
               </div>
               <div className="px-4 py-4">

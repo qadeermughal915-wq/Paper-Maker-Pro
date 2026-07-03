@@ -431,6 +431,7 @@ router.get(
       examDate: full.examDate,
       instructions: full.instructions,
       schoolName: full.schoolName,
+      logoUrl: full.logoUrl,
       questions: full.questions.map((q) => ({
         order: q.order,
         section: q.section,

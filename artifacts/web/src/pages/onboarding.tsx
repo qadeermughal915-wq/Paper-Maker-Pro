@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import logoIcon from "@assets/image_1783062400058.png";
 import { useOnboardSchool, getGetMeQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,7 +60,7 @@ export default function OnboardingPage() {
       </div>
       
       <div className="w-full max-w-md flex flex-col items-center mb-8">
-        <img src="/logo.svg" alt="Paperz.pk" className="h-16 w-16 mb-4" />
+        <img src={logoIcon} alt="Paperz.pk" className="h-16 w-16 mb-4" />
         <h1 className="text-3xl font-bold text-secondary text-center">Let's set up your school</h1>
       </div>
 

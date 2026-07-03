@@ -1,6 +1,7 @@
 import { SignedIn, SignedOut } from "@/components/auth-state";
 import { Redirect, Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import logoIcon from "@assets/image_1783062400058.png";
 
 export default function LandingPage() {
   return (
@@ -12,7 +13,7 @@ export default function LandingPage() {
         <div className="min-h-screen flex flex-col bg-background">
           <header className="px-6 lg:px-12 h-20 flex items-center justify-between border-b bg-white/50 backdrop-blur-md sticky top-0 z-50">
             <div className="flex items-center gap-3">
-              <img src="/logo.svg" alt="Paperz.pk Logo" className="h-8 w-8" />
+              <img src={logoIcon} alt="Paperz.pk Logo" className="h-8 w-8" />
               <span className="text-xl font-bold text-secondary tracking-tight">paperz.pk</span>
             </div>
             <div className="flex gap-4 items-center">

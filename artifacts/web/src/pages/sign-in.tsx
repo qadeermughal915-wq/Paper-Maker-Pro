@@ -1,6 +1,7 @@
 import { SignIn } from "@clerk/react";
 import { SignedIn, SignedOut } from "@/components/auth-state";
 import { Redirect } from "wouter";
+import logoIcon from "@assets/image_1783062400058.png";
 import { Card } from "@/components/ui/card";
 
 export default function SignInPage() {
@@ -13,7 +14,7 @@ export default function SignInPage() {
         <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
           <Card className="w-full max-w-md p-8 border-none shadow-xl bg-white flex flex-col items-center">
             <div className="w-full flex justify-center mb-8">
-              <img src="/logo.svg" alt="Paperz.pk" className="h-16 w-16" />
+              <img src={logoIcon} alt="Paperz.pk" className="h-16 w-16" />
             </div>
             <SignIn 
               routing="path" 
