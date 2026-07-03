@@ -3,3 +3,4 @@
 - [JSX explicit generics break babel plugin](jsx-generic-babel-plugin.md) — never `<Comp<T> ...>` in web TSX; passes tsc but 500s at runtime. Let T infer from props.
 - [Expo Router group routing](expo-router-groups.md) — mobile tab screens must NOT be named index (collides with root gate); set auth token getter during render, not in effect.
 - [Clerk blank prod page](clerk-blank-prod-page.md) — 200 OK + blank screen + no console error on published Clerk app = ClerkProvider hung; missing proxyUrl/publishableKeyFromHost.
+- [Unscoped router.use() middleware](express-unscoped-router-middleware.md) — flat-mounted Express routers: unscoped middleware in one router can intercept unrelated routes mounted later (e.g. blocked /admin/* with wrong error).
