@@ -1,5 +1,11 @@
 import { Link, useLocation } from "wouter";
-import { useGetMe } from "@workspace/api-client-react";
+import {
+  useGetMe,
+  useGetSchool,
+  useGetSubscription,
+  getGetSchoolQueryKey,
+  getGetSubscriptionQueryKey,
+} from "@workspace/api-client-react";
 import { UserButton } from "@clerk/react";
 import logoIcon from "@assets/image_1783062400058.png";
 import type { LucideIcon } from "lucide-react";
@@ -20,6 +26,53 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+
+function ValidTillBadge({ expiresAt }: { expiresAt?: string | null }) {
+  if (!expiresAt) return null;
+  const expired = new Date(expiresAt).getTime() < Date.now();
+  const formatted = new Date(expiresAt)
+    .toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+    .toUpperCase();
+
+  return (
+    <div
+      className={`w-full text-center rounded-md py-1.5 text-xs font-bold tracking-wide ${
+        expired ? "bg-destructive text-destructive-foreground" : "bg-emerald-500 text-white"
+      }`}
+    >
+      {expired ? "EXPIRED" : "VALID TILL"} {formatted}
+    </div>
+  );
+}
+
+function SchoolProfileCard() {
+  const { data: me } = useGetMe();
+  const role = me?.role;
+  const enabled = !!role && role !== "super_admin";
+  const { data: school } = useGetSchool({ query: { enabled, queryKey: getGetSchoolQueryKey() } });
+  const { data: subscription } = useGetSubscription({ query: { enabled, queryKey: getGetSubscriptionQueryKey() } });
+
+  if (!enabled) return null;
+
+  const roleLabel = role === "school_admin" ? "Administrator" : role === "teacher" ? "Teacher" : role;
+
+  return (
+    <div className="mx-4 mt-4 rounded-lg bg-sidebar-accent/40 border border-sidebar-border/50 p-4 flex flex-col items-center text-center gap-2">
+      {school?.logoUrl ? (
+        <img src={school.logoUrl} alt={school?.name} className="h-14 w-14 rounded-full object-cover border border-sidebar-border/50" />
+      ) : (
+        <div className="h-14 w-14 rounded-full bg-sidebar-primary/20 border border-sidebar-border/50 flex items-center justify-center text-sidebar-foreground font-bold text-lg">
+          {school?.name?.[0]?.toUpperCase() ?? "S"}
+        </div>
+      )}
+      <div>
+        <p className="text-sm font-semibold text-sidebar-foreground truncate max-w-[9rem]">{me?.name || school?.name}</p>
+        <p className="text-xs text-sidebar-foreground/60 capitalize">{roleLabel}</p>
+      </div>
+      <ValidTillBadge expiresAt={subscription?.expiresAt} />
+    </div>
+  );
+}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { data: me } = useGetMe();
@@ -80,6 +133,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <img src={logoIcon} alt="Paperz.pk" className="h-8 w-8 mr-3" />
           <span className="text-xl font-bold text-sidebar-foreground">paperz.pk</span>
         </div>
+        <SchoolProfileCard />
         <div className="flex-1 px-4 py-4 overflow-y-auto">
           <NavLinks />
         </div>

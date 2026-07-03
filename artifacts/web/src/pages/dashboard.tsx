@@ -1,6 +1,25 @@
-import { useGetMe, useGetSchoolStats, useGetAdminStats, useGetRecentPapers, useGetQuestionsByType } from "@workspace/api-client-react";
+import { Link } from "wouter";
+import {
+  useGetMe,
+  useGetSchoolStats,
+  useGetAdminStats,
+  useListActivity,
+} from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Users, BookOpen, Database, FileText, Building, DollarSign } from "lucide-react";
+import {
+  Loader2,
+  Users,
+  FileText,
+  Building,
+  DollarSign,
+  LayoutTemplate,
+  ClipboardList,
+  Activity as ActivityIcon,
+  Settings,
+  Bell,
+  CheckCircle2,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 export default function DashboardPage() {
   const { data: me } = useGetMe();
@@ -12,13 +31,65 @@ export default function DashboardPage() {
   return <SchoolDashboard />;
 }
 
+function ActionTile({
+  title,
+  subtitle,
+  icon: Icon,
+  gradient,
+  count,
+  href,
+}: {
+  title: string;
+  subtitle?: string;
+  icon: LucideIcon;
+  gradient: string;
+  count?: number;
+  href: string;
+}) {
+  return (
+    <Link href={href}>
+      <div
+        className={`rounded-xl p-5 text-white shadow-sm cursor-pointer transition-transform hover:-translate-y-0.5 hover:shadow-md ${gradient}`}
+      >
+        <div className="flex items-start justify-between">
+          <div className="bg-white/20 rounded-lg p-2.5">
+            <Icon className="h-6 w-6" />
+          </div>
+          {typeof count === "number" && (
+            <span className="text-3xl font-bold leading-none">{count}</span>
+          )}
+        </div>
+        <div className="mt-4">
+          <p className="font-semibold text-base">{title}</p>
+          {subtitle && <p className="text-xs text-white/80 mt-0.5">{subtitle}</p>}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function timeAgo(dateStr?: string | null) {
+  if (!dateStr) return "";
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
 function SchoolDashboard() {
   const { data: stats, isLoading } = useGetSchoolStats();
-  const { data: recentPapers } = useGetRecentPapers();
-  const { data: types } = useGetQuestionsByType();
+  const { data: activity } = useListActivity();
 
   if (isLoading) {
-    return <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-primary" size={32} /></div>;
+    return (
+      <div className="h-64 flex items-center justify-center">
+        <Loader2 className="animate-spin text-primary" size={32} />
+      </div>
+    );
   }
 
   return (
@@ -28,55 +99,80 @@ function SchoolDashboard() {
         <p className="text-muted-foreground mt-1">Overview of your school's content.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Total Papers" value={stats?.papers} icon={FileText} />
-        <StatCard title="Questions in Bank" value={stats?.questions} icon={Database} />
-        <StatCard title="Classes Setup" value={stats?.classes} icon={BookOpen} />
-        <StatCard title="Teachers" value={stats?.teachers} icon={Users} />
-      </div>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 grid gap-4 sm:grid-cols-2">
+          <ActionTile
+            title="Generate Paper"
+            subtitle="Create a new exam paper"
+            icon={FileText}
+            gradient="bg-gradient-to-br from-blue-500 to-blue-600"
+            href="/papers/new"
+          />
+          <ActionTile
+            title="Templates"
+            subtitle="Manage paper templates"
+            icon={LayoutTemplate}
+            gradient="bg-gradient-to-br from-green-500 to-green-600"
+            href="/templates"
+          />
+          <ActionTile
+            title="Saved Papers"
+            subtitle="Download / Print Papers"
+            icon={ClipboardList}
+            gradient="bg-gradient-to-br from-orange-400 to-orange-500"
+            count={stats?.papers ?? 0}
+            href="/papers"
+          />
+          <ActionTile
+            title="Teachers"
+            subtitle="Manage teacher accounts"
+            icon={Users}
+            gradient="bg-gradient-to-br from-purple-500 to-purple-600"
+            count={stats?.teachers ?? 0}
+            href="/teachers"
+          />
+          <ActionTile
+            title="Account Activities"
+            subtitle="Check account activities"
+            icon={ActivityIcon}
+            gradient="bg-gradient-to-br from-teal-500 to-cyan-600"
+            href="/activity"
+          />
+          <ActionTile
+            title="Account Settings"
+            subtitle="Update account settings"
+            icon={Settings}
+            gradient="bg-gradient-to-br from-red-500 to-red-600"
+            href="/settings"
+          />
+        </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Papers</CardTitle>
+        <Card className="overflow-hidden">
+          <CardHeader className="bg-primary text-primary-foreground flex flex-row items-center gap-2 py-4">
+            <Bell className="h-4 w-4" />
+            <CardTitle className="text-sm font-semibold">Recent Activity</CardTitle>
           </CardHeader>
-          <CardContent>
-            {recentPapers?.length ? (
-              <div className="space-y-4">
-                {recentPapers.map(paper => (
-                  <div key={paper.id} className="flex justify-between items-center p-3 rounded-lg border bg-card">
+          <CardContent className="p-4">
+            {activity?.length ? (
+              <div className="space-y-3 max-h-[420px] overflow-y-auto">
+                {activity.slice(0, 15).map((item) => (
+                  <div key={item.id} className="flex items-start gap-2 text-sm">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
                     <div>
-                      <p className="font-medium">{paper.title}</p>
-                      <p className="text-sm text-muted-foreground">{paper.className} • {paper.subjectName}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold">{paper.totalMarks} Marks</p>
+                      <p className="text-foreground">
+                        <span className="font-medium">{item.actorName || "Someone"}</span>{" "}
+                        {item.action}
+                        {item.entity ? ` ${item.entity}` : ""}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{timeAgo(item.createdAt)}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-muted-foreground">No papers created yet.</div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Question Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {types?.length ? (
-              <div className="space-y-3">
-                {types.map(t => (
-                  <div key={t.type} className="flex items-center justify-between">
-                    <span className="capitalize text-sm font-medium">{t.type.replace('_', ' ')}</span>
-                    <span className="bg-primary/10 text-primary px-2 py-1 rounded-md text-sm">{t.count}</span>
-                  </div>
-                ))}
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                No recent activity yet.
               </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">Question bank is empty.</div>
             )}
           </CardContent>
         </Card>
@@ -89,7 +185,11 @@ function SuperAdminDashboard() {
   const { data: stats, isLoading } = useGetAdminStats();
 
   if (isLoading) {
-    return <div className="h-64 flex items-center justify-center"><Loader2 className="animate-spin text-primary" size={32} /></div>;
+    return (
+      <div className="h-64 flex items-center justify-center">
+        <Loader2 className="animate-spin text-primary" size={32} />
+      </div>
+    );
   }
 
   return (
