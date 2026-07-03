@@ -1349,8 +1349,58 @@ export const ListAllUsersResponseItem = zod.object({
   "status": zod.string(),
   "schoolId": zod.number().nullish(),
   "schoolName": zod.string().nullish(),
-  "createdAt": zod.string().nullish()
+  "createdAt": zod.string().nullish(),
+  "hasClerkAccount": zod.boolean()
 })
 export const ListAllUsersResponse = zod.array(ListAllUsersResponseItem)
+
+
+/**
+ * @summary Start impersonating another user (super admin only)
+ */
+export const StartImpersonationParams = zod.object({
+  "userId": zod.coerce.number()
+})
+
+export const StartImpersonationResponse = zod.object({
+  "signInToken": zod.string().describe('Clerk actor sign-in token\/ticket to activate the impersonated session on the client.'),
+  "targetUser": zod.object({
+  "id": zod.number(),
+  "name": zod.string().nullish(),
+  "email": zod.string(),
+  "role": zod.enum(['super_admin', 'school_admin', 'teacher']),
+  "status": zod.string(),
+  "schoolId": zod.number().nullish(),
+  "schoolName": zod.string().nullish(),
+  "createdAt": zod.string().nullish(),
+  "hasClerkAccount": zod.boolean()
+})
+})
+
+
+/**
+ * @summary End the current impersonation session
+ */
+export const StopImpersonationResponse = zod.object({
+  "success": zod.boolean()
+})
+
+
+/**
+ * @summary List impersonation audit history (super admin)
+ */
+export const ListImpersonationLogsResponseItem = zod.object({
+  "id": zod.number(),
+  "adminId": zod.number(),
+  "adminName": zod.string().nullish(),
+  "targetUserId": zod.number(),
+  "targetName": zod.string().nullish(),
+  "startTime": zod.string(),
+  "endTime": zod.string().nullish(),
+  "isActive": zod.boolean(),
+  "ipAddress": zod.string().nullish(),
+  "userAgent": zod.string().nullish()
+})
+export const ListImpersonationLogsResponse = zod.array(ListImpersonationLogsResponseItem)
 
 

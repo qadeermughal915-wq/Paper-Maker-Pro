@@ -20,4 +20,5 @@ export interface AdminUser {
   schoolName?: string | null;
   /** @nullable */
   createdAt?: string | null;
+  hasClerkAccount: boolean;
 }

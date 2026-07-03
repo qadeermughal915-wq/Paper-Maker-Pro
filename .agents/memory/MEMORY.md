@@ -5,3 +5,4 @@
 - [Clerk blank prod page](clerk-blank-prod-page.md) — 200 OK + blank screen + no console error on published Clerk app = ClerkProvider hung; missing proxyUrl/publishableKeyFromHost.
 - [Unscoped router.use() middleware](express-unscoped-router-middleware.md) — flat-mounted Express routers: unscoped middleware in one router can intercept unrelated routes mounted later (e.g. blocked /admin/* with wrong error).
 - [e2e testing Clerk apps](e2e-clerk-testing.md) — runTest must set `testClerkAuth: true`; without it, plans that reference Clerk sign-in fall back to interacting with the real Clerk UI and can dead-end in Google OAuth.
+- [testClerkAuth sets a real actor claim](testclerkauth-actor-claim.md) — `runTest testClerkAuth` sign-ins have `session.actor = {type:"agent",...}`; any app-side `session.actor` impersonation check must exclude `type==="agent"` or every test user looks impersonated.

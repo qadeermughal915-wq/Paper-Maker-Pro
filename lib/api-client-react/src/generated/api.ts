@@ -31,9 +31,12 @@ import type {
   Class,
   ClassInput,
   ClassUpdate,
+  Error,
   GeneratePaperInput,
   GetPaperAvailabilityParams,
   HealthStatus,
+  ImpersonateResponse,
+  ImpersonationLog,
   ImportRecord,
   ImportResult,
   ListChaptersParams,
@@ -65,6 +68,7 @@ import type {
   SchoolStats,
   SchoolUpdate,
   SearchQuestionsParams,
+  StopImpersonationResult,
   Subject,
   SubjectInput,
   SubjectUpdate,
@@ -4691,6 +4695,223 @@ export function useListAllUsers<TData = Awaited<ReturnType<typeof listAllUsers>>
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getListAllUsersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getStartImpersonationUrl = (userId: number,) => {
+
+
+
+
+  return `/api/admin/impersonate/${userId}`
+}
+
+/**
+ * @summary Start impersonating another user (super admin only)
+ */
+export const startImpersonation = async (userId: number, options?: RequestInit): Promise<ImpersonateResponse> => {
+
+  return customFetch<ImpersonateResponse>(getStartImpersonationUrl(userId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getStartImpersonationMutationOptions = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startImpersonation>>, TError,{userId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof startImpersonation>>, TError,{userId: number}, TContext> => {
+
+const mutationKey = ['startImpersonation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof startImpersonation>>, {userId: number}> = (props) => {
+          const {userId} = props ?? {};
+
+          return  startImpersonation(userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StartImpersonationMutationResult = NonNullable<Awaited<ReturnType<typeof startImpersonation>>>
+
+    export type StartImpersonationMutationError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | Error>
+
+    /**
+ * @summary Start impersonating another user (super admin only)
+ */
+export const useStartImpersonation = <TError = ErrorType<BadRequestResponse | UnauthorizedResponse | NotFoundResponse | Error>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof startImpersonation>>, TError,{userId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof startImpersonation>>,
+        TError,
+        {userId: number},
+        TContext
+      > => {
+      return useMutation(getStartImpersonationMutationOptions(options));
+    }
+
+export const getStopImpersonationUrl = () => {
+
+
+
+
+  return `/api/admin/stop-impersonation`
+}
+
+/**
+ * @summary End the current impersonation session
+ */
+export const stopImpersonation = async ( options?: RequestInit): Promise<StopImpersonationResult> => {
+
+  return customFetch<StopImpersonationResult>(getStopImpersonationUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getStopImpersonationMutationOptions = <TError = ErrorType<UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof stopImpersonation>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof stopImpersonation>>, TError,void, TContext> => {
+
+const mutationKey = ['stopImpersonation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof stopImpersonation>>, void> = () => {
+
+
+          return  stopImpersonation(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StopImpersonationMutationResult = NonNullable<Awaited<ReturnType<typeof stopImpersonation>>>
+
+    export type StopImpersonationMutationError = ErrorType<UnauthorizedResponse>
+
+    /**
+ * @summary End the current impersonation session
+ */
+export const useStopImpersonation = <TError = ErrorType<UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof stopImpersonation>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof stopImpersonation>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getStopImpersonationMutationOptions(options));
+    }
+
+export const getListImpersonationLogsUrl = () => {
+
+
+
+
+  return `/api/admin/impersonation-logs`
+}
+
+/**
+ * @summary List impersonation audit history (super admin)
+ */
+export const listImpersonationLogs = async ( options?: RequestInit): Promise<ImpersonationLog[]> => {
+
+  return customFetch<ImpersonationLog[]>(getListImpersonationLogsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListImpersonationLogsQueryKey = () => {
+    return [
+    `/api/admin/impersonation-logs`
+    ] as const;
+    }
+
+
+export const getListImpersonationLogsQueryOptions = <TData = Awaited<ReturnType<typeof listImpersonationLogs>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listImpersonationLogs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListImpersonationLogsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listImpersonationLogs>>> = ({ signal }) => listImpersonationLogs({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listImpersonationLogs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListImpersonationLogsQueryResult = NonNullable<Awaited<ReturnType<typeof listImpersonationLogs>>>
+export type ListImpersonationLogsQueryError = ErrorType<UnauthorizedResponse>
+
+
+/**
+ * @summary List impersonation audit history (super admin)
+ */
+
+export function useListImpersonationLogs<TData = Awaited<ReturnType<typeof listImpersonationLogs>>, TError = ErrorType<UnauthorizedResponse>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listImpersonationLogs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListImpersonationLogsQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

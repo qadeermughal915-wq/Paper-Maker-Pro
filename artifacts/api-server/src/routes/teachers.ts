@@ -1,7 +1,7 @@
 import { Router, type IRouter, type Response } from "express";
 import { db } from "@workspace/db";
 import { users } from "@workspace/db";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import {
   ListTeachersResponse,
   CreateTeacherBody,
@@ -63,10 +63,12 @@ router.post(
       return;
     }
 
+    const emailLower = body.email.toLowerCase();
+
     const [existing] = await db
       .select()
       .from(users)
-      .where(eq(users.email, body.email));
+      .where(sql`lower(${users.email}) = ${emailLower}`);
     if (existing) {
       res.status(409).json({ error: "A user with this email already exists" });
       return;
@@ -75,7 +77,7 @@ router.post(
     const [created] = await db
       .insert(users)
       .values({
-        email: body.email,
+        email: emailLower,
         name: body.name,
         role: "teacher",
         schoolId,

@@ -29,6 +29,8 @@ import EditPaperPage from "@/pages/papers/edit";
 
 import { AuthGuard } from "@/components/auth-guard";
 import { AppShell } from "@/components/layout/app-shell";
+import { ImpersonationBanner } from "@/components/impersonation-banner";
+import AdminImpersonationLogsPage from "@/pages/admin-impersonation-logs";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +62,7 @@ if (!clerkPubKey) {
 function AuthenticatedApp() {
   return (
     <AuthGuard>
+      <ImpersonationBanner />
       <Switch>
         <Route path="/onboarding" component={OnboardingPage} />
         <Route>
@@ -81,6 +84,7 @@ function AuthenticatedApp() {
               <Route path="/admin/schools" component={AdminSchoolsPage} />
               <Route path="/admin/users" component={AdminUsersPage} />
               <Route path="/admin/packages" component={AdminPackagesPage} />
+              <Route path="/admin/impersonation-logs" component={AdminImpersonationLogsPage} />
               <Route component={NotFound} />
             </Switch>
           </AppShell>

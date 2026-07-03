@@ -1199,6 +1199,69 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /admin/impersonate/{userId}:
+    post:
+      operationId: startImpersonation
+      tags: [admin]
+      summary: Start impersonating another user (super admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Impersonation started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImpersonateResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          description: Too many impersonation attempts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /admin/stop-impersonation:
+    post:
+      operationId: stopImpersonation
+      tags: [admin]
+      summary: End the current impersonation session
+      responses:
+        "200":
+          description: Impersonation stopped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StopImpersonationResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /admin/impersonation-logs:
+    get:
+      operationId: listImpersonationLogs
+      tags: [admin]
+      summary: List impersonation audit history (super admin)
+      responses:
+        "200":
+          description: Impersonation logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ImpersonationLog"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
 components:
   parameters:
     IdParam:
@@ -2171,7 +2234,7 @@ components:
 
     AdminUser:
       type: object
-      required: [id, email, role, status]
+      required: [id, email, role, status, hasClerkAccount]
       properties:
         id:
           type: integer
@@ -2188,4 +2251,48 @@ components:
         schoolName:
           type: ["string", "null"]
         createdAt:
+          type: ["string", "null"]
+        hasClerkAccount:
+          type: boolean
+
+    ImpersonateResponse:
+      type: object
+      required: [signInToken, targetUser]
+      properties:
+        signInToken:
+          type: string
+          description: Clerk actor sign-in token/ticket to activate the impersonated session on the client.
+        targetUser:
+          $ref: "#/components/schemas/AdminUser"
+
+    StopImpersonationResult:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+
+    ImpersonationLog:
+      type: object
+      required: [id, adminId, targetUserId, startTime, isActive]
+      properties:
+        id:
+          type: integer
+        adminId:
+          type: integer
+        adminName:
+          type: ["string", "null"]
+        targetUserId:
+          type: integer
+        targetName:
+          type: ["string", "null"]
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        isActive:
+          type: boolean
+        ipAddress:
+          type: ["string", "null"]
+        userAgent:
           type: ["string", "null"]

@@ -88,6 +88,7 @@ router.get(
         schoolId: users.schoolId,
         schoolName: schools.name,
         createdAt: users.createdAt,
+        clerkUserId: users.clerkUserId,
       })
       .from(users)
       .leftJoin(schools, eq(users.schoolId, schools.id))
@@ -104,6 +105,7 @@ router.get(
           schoolId: u.schoolId,
           schoolName: u.schoolName,
           createdAt: u.createdAt?.toISOString() ?? null,
+          hasClerkAccount: !!u.clerkUserId,
         })),
       ),
     );

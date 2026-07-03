@@ -9,3 +9,4 @@ export * from "./views";
 export * from "./billing";
 export * from "./activity";
 export * from "./templates";
+export * from "./impersonation";

@@ -12,6 +12,7 @@ import statsRouter from "./stats";
 import viewsRouter from "./views";
 import billingRouter from "./billing";
 import templatesRouter from "./templates";
+import impersonationRouter from "./impersonation";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(statsRouter);
 router.use(viewsRouter);
 router.use(billingRouter);
 router.use(templatesRouter);
+router.use(impersonationRouter);
 
 export default router;

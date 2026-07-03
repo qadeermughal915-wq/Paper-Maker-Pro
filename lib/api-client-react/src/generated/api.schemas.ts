@@ -659,6 +659,35 @@ export interface AdminUser {
   schoolName?: string | null;
   /** @nullable */
   createdAt?: string | null;
+  hasClerkAccount: boolean;
+}
+
+export interface ImpersonateResponse {
+  /** Clerk actor sign-in token/ticket to activate the impersonated session on the client. */
+  signInToken: string;
+  targetUser: AdminUser;
+}
+
+export interface StopImpersonationResult {
+  success: boolean;
+}
+
+export interface ImpersonationLog {
+  id: number;
+  adminId: number;
+  /** @nullable */
+  adminName?: string | null;
+  targetUserId: number;
+  /** @nullable */
+  targetName?: string | null;
+  startTime: string;
+  /** @nullable */
+  endTime?: string | null;
+  isActive: boolean;
+  /** @nullable */
+  ipAddress?: string | null;
+  /** @nullable */
+  userAgent?: string | null;
 }
 
 /**

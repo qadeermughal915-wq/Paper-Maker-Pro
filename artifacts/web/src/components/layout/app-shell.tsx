@@ -9,6 +9,7 @@ import {
 import { UserButton } from "@clerk/react";
 import logoIcon from "@assets/image_1783062400058.png";
 import type { LucideIcon } from "lucide-react";
+import { UserCog } from "lucide-react";
 import { 
   LayoutDashboard, 
   BookOpen, 
@@ -86,6 +87,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     links.push({ href: "/admin/schools", label: "Schools", icon: Building });
     links.push({ href: "/admin/users", label: "Users", icon: Users });
     links.push({ href: "/admin/packages", label: "Packages", icon: Package });
+    links.push({ href: "/admin/impersonation-logs", label: "Impersonation Logs", icon: UserCog });
   } else {
     links.push({ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard });
     links.push({ href: "/question-bank", label: "Question Bank", icon: Database });

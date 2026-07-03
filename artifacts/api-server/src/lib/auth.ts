@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { getAuth, clerkClient } from "@clerk/express";
 import { db } from "@workspace/db";
 import { users, type User } from "@workspace/db";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 
 const SUPER_ADMIN_EMAILS = (process.env.SUPER_ADMIN_EMAILS ?? "")
   .split(",")
@@ -49,8 +49,11 @@ export async function resolveLocalUser(
   const emailLower = identity.email?.toLowerCase() ?? null;
 
   if (emailLower && SUPER_ADMIN_EMAILS.includes(emailLower)) {
-    const [existing] = identity.email
-      ? await db.select().from(users).where(eq(users.email, identity.email))
+    const [existing] = emailLower
+      ? await db
+          .select()
+          .from(users)
+          .where(sql`lower(${users.email}) = ${emailLower}`)
       : [];
     if (existing) {
       const [updated] = await db
@@ -69,7 +72,7 @@ export async function resolveLocalUser(
       .insert(users)
       .values({
         clerkUserId: identity.clerkUserId,
-        email: identity.email ?? "",
+        email: emailLower ?? "",
         name: identity.name,
         role: "super_admin",
         status: "active",
@@ -78,11 +81,16 @@ export async function resolveLocalUser(
     return created;
   }
 
-  if (identity.email) {
+  if (emailLower) {
     const [invited] = await db
       .select()
       .from(users)
-      .where(and(eq(users.email, identity.email), isNull(users.clerkUserId)));
+      .where(
+        and(
+          sql`lower(${users.email}) = ${emailLower}`,
+          isNull(users.clerkUserId),
+        ),
+      );
     if (invited) {
       const [updated] = await db
         .update(users)
