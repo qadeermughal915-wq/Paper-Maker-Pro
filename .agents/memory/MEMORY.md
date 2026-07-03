@@ -2,3 +2,4 @@
 - [SSRF on user URLs rendered by Puppeteer](ssrf-user-urls.md) — validate + private-range block any user URL a headless browser or server fetches (logo URLs).
 - [JSX explicit generics break babel plugin](jsx-generic-babel-plugin.md) — never `<Comp<T> ...>` in web TSX; passes tsc but 500s at runtime. Let T infer from props.
 - [Expo Router group routing](expo-router-groups.md) — mobile tab screens must NOT be named index (collides with root gate); set auth token getter during render, not in effect.
+- [Clerk blank prod page](clerk-blank-prod-page.md) — 200 OK + blank screen + no console error on published Clerk app = ClerkProvider hung; missing proxyUrl/publishableKeyFromHost.
