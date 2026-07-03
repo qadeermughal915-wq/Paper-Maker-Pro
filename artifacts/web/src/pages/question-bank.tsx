@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useListQuestions, useListClasses, useListSubjects, useDeleteQuestion, getListQuestionsQueryKey, getListSubjectsQueryKey } from "@workspace/api-client-react";
+import { useListQuestions, useListClasses, useListSubjects, useListChapters, useListTopics, useDeleteQuestion, getListQuestionsQueryKey, getListSubjectsQueryKey, getListChaptersQueryKey, getListTopicsQueryKey } from "@workspace/api-client-react";
 import type { Question } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +13,8 @@ import { ImportQuestionsDialog } from "@/components/questions/import-questions-d
 export default function QuestionBankPage() {
   const [classId, setClassId] = useState("");
   const [subjectId, setSubjectId] = useState("");
+  const [chapterId, setChapterId] = useState("");
+  const [topicId, setTopicId] = useState("");
   const [type, setType] = useState("");
   const [search, setSearch] = useState("");
 
@@ -21,14 +23,26 @@ export default function QuestionBankPage() {
     { classId: Number(classId) || undefined },
     { query: { enabled: !!classId, queryKey: getListSubjectsQueryKey({ classId: Number(classId) || undefined }) } },
   );
-  
+  const { data: chapters } = useListChapters(
+    { subjectId: Number(subjectId) || undefined },
+    { query: { enabled: !!subjectId && subjectId !== "all", queryKey: getListChaptersQueryKey({ subjectId: Number(subjectId) || undefined }) } },
+  );
+  const { data: topics } = useListTopics(
+    { chapterId: Number(chapterId) || undefined },
+    { query: { enabled: !!chapterId && chapterId !== "all", queryKey: getListTopicsQueryKey({ chapterId: Number(chapterId) || undefined }) } },
+  );
+
   const activeClassId = classId && classId !== "all" ? Number(classId) : undefined;
   const activeSubjectId = subjectId && subjectId !== "all" ? Number(subjectId) : undefined;
+  const activeChapterId = chapterId && chapterId !== "all" ? Number(chapterId) : undefined;
+  const activeTopicId = topicId && topicId !== "all" ? Number(topicId) : undefined;
   const activeType = type && type !== "all" ? type : undefined;
 
   const { data: questions, isLoading } = useListQuestions({
     classId: activeClassId,
     subjectId: activeSubjectId,
+    chapterId: activeChapterId,
+    topicId: activeTopicId,
     type: activeType as any,
     search: search || undefined
   });
@@ -64,23 +78,37 @@ export default function QuestionBankPage() {
       </div>
 
       <Card>
-        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Search questions..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
           </div>
-          <Select value={classId} onValueChange={v => { setClassId(v); setSubjectId(""); }}>
+          <Select value={classId} onValueChange={v => { setClassId(v); setSubjectId(""); setChapterId(""); setTopicId(""); }}>
             <SelectTrigger><SelectValue placeholder="Filter by Class" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Classes</SelectItem>
               {classes?.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Select value={subjectId} onValueChange={setSubjectId} disabled={!classId || classId === "all"}>
+          <Select value={subjectId} onValueChange={v => { setSubjectId(v); setChapterId(""); setTopicId(""); }} disabled={!classId || classId === "all"}>
             <SelectTrigger><SelectValue placeholder="Filter by Subject" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Subjects</SelectItem>
               {subjects?.map(s => <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={chapterId} onValueChange={v => { setChapterId(v); setTopicId(""); }} disabled={!subjectId || subjectId === "all"}>
+            <SelectTrigger><SelectValue placeholder="Filter by Chapter" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Chapters</SelectItem>
+              {chapters?.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={topicId} onValueChange={setTopicId} disabled={!chapterId || chapterId === "all"}>
+            <SelectTrigger><SelectValue placeholder="Filter by Topic" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Topics</SelectItem>
+              {topics?.map(t => <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={type} onValueChange={setType}>
