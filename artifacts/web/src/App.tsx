@@ -1,8 +1,9 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, useLocation, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ClerkProvider } from "@clerk/react";
+import { publishableKeyFromHost } from "@clerk/react/internal";
 
 import NotFound from "@/pages/not-found";
 import LandingPage from "@/pages/landing";
@@ -30,7 +31,27 @@ import { AuthGuard } from "@/components/auth-guard";
 import { AppShell } from "@/components/layout/app-shell";
 
 const queryClient = new QueryClient();
-const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+// REQUIRED — resolves the key from window.location.hostname so the same build
+// serves multiple Clerk custom domains. Do not inline the env var directly.
+const clerkPubKey = publishableKeyFromHost(
+  window.location.hostname,
+  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+);
+
+// REQUIRED — empty in dev (Clerk hits dev FAPI directly), auto-set in prod.
+// Do NOT gate on import.meta.env.PROD / NODE_ENV.
+const clerkProxyUrl = import.meta.env.VITE_CLERK_PROXY_URL;
+
+const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+// Clerk passes full paths to routerPush/routerReplace, but wouter's
+// setLocation prepends the base — strip it to avoid doubling.
+function stripBase(path: string): string {
+  return basePath && path.startsWith(basePath)
+    ? path.slice(basePath.length) || "/"
+    : path;
+}
 
 if (!clerkPubKey) {
   throw new Error("Missing Publishable Key");
@@ -80,21 +101,30 @@ function Router() {
   );
 }
 
+function ClerkProviderWithRoutes() {
+  const [, setLocation] = useLocation();
+
+  return (
+    <ClerkProvider
+      publishableKey={clerkPubKey}
+      proxyUrl={clerkProxyUrl}
+      routerPush={(to) => setLocation(stripBase(to))}
+      routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
+    >
+      <TooltipProvider>
+        <Router />
+        <Toaster />
+      </TooltipProvider>
+    </ClerkProvider>
+  );
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ClerkProvider 
-        publishableKey={clerkPubKey}
-        routerPush={(to) => window.location.href = to}
-        routerReplace={(to) => window.location.replace(to)}
-      >
-        <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
-      </ClerkProvider>
+      <WouterRouter base={basePath}>
+        <ClerkProviderWithRoutes />
+      </WouterRouter>
     </QueryClientProvider>
   );
 }
