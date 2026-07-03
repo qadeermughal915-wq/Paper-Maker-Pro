@@ -1,0 +1,142 @@
+Add a secure IMPERSONATION feature to the ERP system (Paperz.pk).
+
+GOAL:
+Allow Super Admin or Admin to temporarily login as another user (Teacher, School Admin) without knowing their password.
+
+IMPORTANT SECURITY RULES:
+- Only Super Admin can impersonate users
+- Every impersonation must be logged in audit logs
+- Original admin session must be preserved
+- Admin must be able to exit impersonation anytime
+- Never allow impersonation of another Super Admin
+
+TECH STACK:
+- Node.js + Express backend
+- React frontend
+- JWT authentication
+- PostgreSQL database
+
+----------------------------------------------------
+DATABASE DESIGN
+----------------------------------------------------
+
+Create table: impersonation_logs
+
+Fields:
+- id (UUID)
+- admin_id (who is impersonating)
+- target_user_id (user being impersonated)
+- start_time (timestamp)
+- end_time (timestamp nullable)
+- is_active (boolean)
+- ip_address
+- user_agent
+
+----------------------------------------------------
+BACKEND LOGIC
+----------------------------------------------------
+
+1. CREATE IMPERSONATION
+
+API:
+POST /api/admin/impersonate/:userId
+
+Steps:
+- Check if logged-in user role = SUPER_ADMIN
+- Validate target user exists
+- Create impersonation session
+- Store original admin_id
+- Generate NEW JWT token for target user
+- Attach metadata:
+  {
+    impersonated: true,
+    adminId: originalAdminId,
+    userId: targetUserId
+  }
+
+Return:
+- new access token
+- target user profile
+- impersonation flag = true
+
+----------------------------------------------------
+2. STOP IMPERSONATION
+
+API:
+POST /api/admin/stop-impersonation
+
+Steps:
+- Get original admin from token metadata
+- End impersonation log (set end_time)
+- Restore original admin JWT session
+- Return admin dashboard token
+
+----------------------------------------------------
+3. MIDDLEWARE (IMPORTANT)
+
+Create middleware:
+
+checkImpersonation()
+
+Rules:
+- If token contains impersonated = true
+  - treat request as target user
+- If false
+  - normal auth flow
+
+----------------------------------------------------
+FRONTEND (REACT)
+
+Add UI in Admin Panel:
+
+1. User List Table (AG Grid)
+- Add button: "Login as User"
+
+2. When clicked:
+- Call impersonation API
+- Redirect to dashboard
+- Show red banner:
+
+"⚠ You are impersonating [User Name]"
+
+3. Add TOP BAR indicator:
+- "Impersonation Mode Active"
+- Button: "Exit Impersonation"
+
+----------------------------------------------------
+AUDIT SYSTEM
+
+Log every action:
+
+- who impersonated
+- whom they impersonated
+- time start/end
+- actions performed during session
+
+----------------------------------------------------
+SECURITY REQUIREMENTS
+
+- Never allow password access of target user
+- Never expose JWT secret
+- Always log impersonation actions
+- Add rate limiting on impersonation API
+- Only SUPER_ADMIN role allowed
+
+----------------------------------------------------
+UI BEHAVIOR
+
+When impersonation is active:
+- Change theme border to RED
+- Show banner at top
+- Disable sensitive actions (optional)
+- Show "Viewing as [User]"
+
+----------------------------------------------------
+EXPECTED RESULT:
+
+Admin can:
+- Click user → impersonate
+- See exact user dashboard
+- Perform actions as that user
+- Exit impersonation safely
+- System logs everything
